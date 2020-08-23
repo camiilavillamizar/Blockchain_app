@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import json
 
 import requests
@@ -30,32 +30,70 @@ def fetch_posts():
                 content.append(tx)
 
         global posts
-        posts = sorted(content, key=lambda k: k['timestamp'],
+        posts = sorted(content, key=lambda k: k['datetime'],
                        reverse=True)
 
 
 @app.route('/')
 def index():
     fetch_posts()
+    
+    """
+    #Cuando ya se tenga el frontend se puede descomentar esto y agregar en actualip la ip actual
+    for post in range (len(posts)):
+        if (post.IP == actualIP): #la proporciona el frontend
+            return render_template('index.html',
+                           title='YourNet: Decentralized '
+                                 'content sharing',
+                           posts = posts,
+                           node_address = CONNECTED_NODE_ADDRESS,
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
+    return redirect('/inscription')
+    """
     return render_template('index.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts=posts,
                            node_address=CONNECTED_NODE_ADDRESS,
-                           readable_time=timestamp_to_string)
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
 
+@app.route('/inscription')
+def inscription():
+    return render_template('inscription.html',
+                            node_address = CONNECTED_NODE_ADDRESS,
+                            readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
-@app.route('/submit', methods=['POST'])
-def submit_textarea():
+@app.route('/submit-inscription', methods = ['POST'])
+def submit_textarea_i():
+    
+    name = request.form['name']
+
+    post_object = {
+        'type': 'inscription', 
+        'content': " ",
+        'name': name, 
+        'IP': 'Una IP'  #La proporciona el frontend
+    }
+
+    new_tx_address = "{}/new_inscription".format(CONNECTED_NODE_ADDRESS)
+    requests.post(new_tx_address,
+                  json=post_object,
+                  headers={'Content-type': 'application/json'})
+
+    return redirect('/inscription')
+
+@app.route('/submit-transaction', methods=['POST'])
+def submit_textarea_t():
     """
     Endpoint to create a new transaction via our application.
     """
     post_content = request.form["content"]
-    author = request.form["author"]
 
     post_object = {
-        'author': author,
+        'type': 'transaction',
         'content': post_content,
+        'name': 'Nombre',
+        'IP' : 'IP',
     }
 
     # Submit a transaction
@@ -67,6 +105,3 @@ def submit_textarea():
 
     return redirect('/')
 
-
-def timestamp_to_string(epoch_time):
-    return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')

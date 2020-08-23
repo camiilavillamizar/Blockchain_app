@@ -1,16 +1,17 @@
 from hashlib import sha256
 import json
 import time
+from datetime import datetime
 
 from flask import Flask, request
 import requests
 
 
-class Block:
-    def __init__(self, index, transactions, timestamp, previous_hash, nonce=0):
+class Block: 
+    def __init__(self, index, transactions, datetime, previous_hash, nonce=0):
         self.index = index
         self.transactions = transactions
-        self.timestamp = timestamp
+        self.datetime = datetime
         self.previous_hash = previous_hash
         self.nonce = nonce
 
@@ -124,7 +125,7 @@ class Blockchain:
 
         new_block = Block(index=last_block.index + 1,
                           transactions=self.unconfirmed_transactions,
-                          timestamp=time.time(),
+                          datetime = datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
                           previous_hash=last_block.hash)
 
         proof = self.proof_of_work(new_block)
@@ -150,18 +151,39 @@ peers = set()
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     tx_data = request.get_json()
-    required_fields = ["author", "content"]
 
-    for field in required_fields:
-        if not tx_data.get(field):
-            return "Invalid transaction data", 404
+    #Se definen los nuevos atributos
+    tx_data["type"] = "transaction"   
+    tx_data["name"] = "Un Nombre" #Lo proporciona el frontend
+    tx_data["IP"] = "Una IP"      #Lo proporciona el frontend
 
-    tx_data["timestamp"] = time.time()
+    required_fields = ["content"]
 
+    if not tx_data.get("content"):
+        return "invalid transaction data", 404
+
+    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     blockchain.add_new_transaction(tx_data)
-
+    
     return "Success", 201
 
+@app.route('/new_inscription', methods = ['POST'])
+def new_inscription():
+    tx_data = request.get_json()
+    required_fields = ["name"]
+
+    tx_data["type"] = "inscription"
+    if not tx_data.get("name"):
+        return "invalid name", 404
+    
+    tx_data["name"] = "Un Nombre" #Lo proporciona el frontend
+    tx_data["IP"] = "Una IP"      #Lo proporciona el frontend
+    
+    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    blockchain.add_new_transaction(tx_data)
+    
+    return "Success", 201
+    
 
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
@@ -266,7 +288,7 @@ def verify_and_add_block():
     block_data = request.get_json()
     block = Block(block_data["index"],
                   block_data["transactions"],
-                  block_data["timestamp"],
+                  block_data["datetime"],
                   block_data["previous_hash"],
                   block_data["nonce"])
 
