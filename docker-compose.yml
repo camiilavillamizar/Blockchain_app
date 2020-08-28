@@ -1,0 +1,54 @@
+version: '3.1'
+
+services: 
+    ngrok_service:
+        container_name: ngrok_service
+        image: wernight/ngrok
+        ports:
+          - 4040:4040
+        links: 
+            - reverseproxy_service
+        environment:
+          - NGROK_AUTH=1ghdY71MEt7NamJaYRDSfSUC8oZ_UCvC7tbSA9Yksdr8i9Hq
+          - NGROK_REGION=us
+          - NGROK_PORT=http://reverseproxy_service:80
+          - NGROK_DEBUG=1
+        networks: 
+            - blockchain_network
+
+    reverseproxy_service:
+        build: ./nginx
+        container_name: reverseproxy_service
+        restart: always
+        networks: 
+            - blockchain_network
+
+
+    blockchain_node_server:
+        container_name: 'blockchain_node_server'
+        build: ./node_server
+        volumes: 
+            - ./node_server:/node_server
+        networks: 
+            - blockchain_network
+        depends_on: 
+            - reverseproxy_service
+
+    blockchain:
+        container_name: 'blockchain_service'
+        build: ./blockchain
+        environment: 
+            - flask_port=5000
+            - CONNECTED_NODE_ADDRESS=http://reverseproxy_service/node
+            - HOST_MACHINE=http://localhost/node
+        volumes: 
+            - ./blockchain:/blockchain
+        networks: 
+            - blockchain_network
+        depends_on: 
+            - blockchain_node_server
+            - reverseproxy_service
+
+networks: 
+    blockchain_network:
+        driver: bridge
