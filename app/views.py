@@ -11,33 +11,73 @@ from app import app
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 
 posts = []
-
+stamplist =[]
 
 def fetch_posts():
     """
-    Function to fetch the chain from a blockchain node, parse the
-    data and store it locally.
+    Function to dump posts from a blockchain node to a json file
     """
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
-        content = []
+
         chain = json.loads(response.content)
-        for block in chain["chain"]:
-            for tx in block["transactions"]:
-                tx["index"] = block["index"]
-                tx["hash"] = block["previous_hash"]
-                content.append(tx)
+        global hashlist
+        # filename = 'logs/tx.json'
 
-        global posts
-        posts = sorted(content, key=lambda k: k['datetime'],
-                       reverse=True)
+        try:
+            txwrite = open('logs/tx.json', 'r+')
+        except:
+            open('logs/tx.json', 'x')
+            txwrite = open('logs/tx.json', 'r+')
+
+        try:
+            data = json.load(txwrite)
+
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    # tx["index"] = block["index"]
+                    tx["hash"] = block["previous_hash"]
+                    # content.append(tx)
+                    if tx["timestamp"] not in stamplist:
+                        data.append(tx)
+                        hashlist.append(tx["stamp"])
+
+                    # print(tx)
+            #txwrite.seek(0)
+            #json.dump(data, txwrite)
+        except:
+            data = []
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    # tx["index"] = block["index"]
+                    tx["hash"] = block["previous_hash"]
+                    # content.append(tx)
+                    data.append(tx)
+                    # print(tx)
+            #txwrite.seek(0)
+            #json.dump(data, txwrite)
 
 
+        # TODO remove dupes
+        # save vals
+        txwrite.seek(0)
+        json.dump(data, txwrite)    
+def show_posts():
+    """
+    Function to fetch posts from a json file and display them
+    """
+    fileread = open('logs/tx.json', 'r+')
+    content = json.load(fileread)
+
+    global posts
+    posts = sorted(content, key=lambda k: k['timestamp'],
+                   reverse=True)
+    
 @app.route('/')
 def index():
     fetch_posts()
-    
+    show_posts()
     """
     #Cuando ya se tenga el frontend se puede descomentar esto y agregar en actualip la ip actual
     for post in range (len(posts)):
