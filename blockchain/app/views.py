@@ -118,7 +118,7 @@ def submit_textarea_i():
         'type': 'inscription',
         'content': " ",
         'name': name,
-        'IP': 'Una IP'  # La proporciona el frontend
+        'IP': request.remote_addr  # La proporciona el frontend
     }
 
     new_tx_address = "{}/new_inscription".format(CONNECTED_NODE_ADDRESS)
@@ -140,7 +140,7 @@ def submit_textarea_t():
         'type': 'transaction',
         'content': post_content,
         'name': 'Nombre',
-        'IP': 'IP',
+        'IP': request.remote_addr,
     }
 
     # Submit a transaction
