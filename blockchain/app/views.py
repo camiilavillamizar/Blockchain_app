@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import os
 
 import requests
 from flask import render_template, redirect, request
@@ -8,10 +9,11 @@ from app import app
 
 # The node with which our application interacts, there can be multiple
 # such nodes as well.
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
+CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS')
 
 posts = []
-stamplist =[]
+stamplist = []
+
 
 def fetch_posts():
     """
@@ -22,7 +24,7 @@ def fetch_posts():
     if response.status_code == 200:
 
         chain = json.loads(response.content)
-        global hashlist
+        global stamplist
         # filename = 'logs/tx.json'
 
         try:
@@ -41,10 +43,10 @@ def fetch_posts():
                     # content.append(tx)
                     if tx["timestamp"] not in stamplist:
                         data.append(tx)
-                        hashlist.append(tx["stamp"])
+                        stamplist.append(tx["stamp"])
 
                     # print(tx)
-            #txwrite.seek(0)
+            # txwrite.seek(0)
             #json.dump(data, txwrite)
         except:
             data = []
@@ -55,14 +57,15 @@ def fetch_posts():
                     # content.append(tx)
                     data.append(tx)
                     # print(tx)
-            #txwrite.seek(0)
+            # txwrite.seek(0)
             #json.dump(data, txwrite)
-
 
         # TODO remove dupes
         # save vals
         txwrite.seek(0)
-        json.dump(data, txwrite)    
+        json.dump(data, txwrite)
+
+
 def show_posts():
     """
     Function to fetch posts from a json file and display them
@@ -73,7 +76,8 @@ def show_posts():
     global posts
     posts = sorted(content, key=lambda k: k['timestamp'],
                    reverse=True)
-    
+
+
 @app.route('/')
 def index():
     fetch_posts()
@@ -94,25 +98,27 @@ def index():
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts=posts,
-                           node_address=CONNECTED_NODE_ADDRESS,
-                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
+                           node_address=request.url_root,
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
 
 @app.route('/inscription')
 def inscription():
     return render_template('inscription.html',
-                            node_address = CONNECTED_NODE_ADDRESS,
-                            readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                           node_address=request.url_root,
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
-@app.route('/submit-inscription', methods = ['POST'])
+
+@app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
-    
+
     name = request.form['name']
 
     post_object = {
-        'type': 'inscription', 
+        'type': 'inscription',
         'content': " ",
-        'name': name, 
-        'IP': 'Una IP'  #La proporciona el frontend
+        'name': name,
+        'IP': 'Una IP'  # La proporciona el frontend
     }
 
     new_tx_address = "{}/new_inscription".format(CONNECTED_NODE_ADDRESS)
@@ -121,6 +127,7 @@ def submit_textarea_i():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/inscription')
+
 
 @app.route('/submit-transaction', methods=['POST'])
 def submit_textarea_t():
@@ -133,7 +140,7 @@ def submit_textarea_t():
         'type': 'transaction',
         'content': post_content,
         'name': 'Nombre',
-        'IP' : 'IP',
+        'IP': 'IP',
     }
 
     # Submit a transaction
@@ -144,4 +151,3 @@ def submit_textarea_t():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/')
-
