@@ -7,7 +7,7 @@ from flask import Flask, request
 import requests
 
 
-class Block: 
+class Block:
     def __init__(self, index, transactions, datetime, previous_hash, nonce=0):
         self.index = index
         self.transactions = transactions
@@ -125,7 +125,7 @@ class Blockchain:
 
         new_block = Block(index=last_block.index + 1,
                           transactions=self.unconfirmed_transactions,
-                          datetime = datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+                          datetime=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
                           previous_hash=last_block.hash)
 
         proof = self.proof_of_work(new_block)
@@ -152,10 +152,10 @@ peers = set()
 def new_transaction():
     tx_data = request.get_json()
 
-    #Se definen los nuevos atributos
-    tx_data["type"] = "transaction"   
-    tx_data["name"] = "Un Nombre" #Lo proporciona el frontend
-    tx_data["IP"] = "Una IP"      #Lo proporciona el frontend
+    # Se definen los nuevos atributos
+    tx_data["type"] = "transaction"
+    tx_data["name"] = "Un Nombre"  # Lo proporciona el frontend
+    tx_data["IP"] = request.remote_addr  # Lo proporciona el frontend
 
     required_fields = ["content"]
 
@@ -164,10 +164,11 @@ def new_transaction():
 
     tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     blockchain.add_new_transaction(tx_data)
-    
+
     return "Success", 201
 
-@app.route('/new_inscription', methods = ['POST'])
+
+@app.route('/new_inscription', methods=['POST'])
 def new_inscription():
     tx_data = request.get_json()
     required_fields = ["name"]
@@ -175,15 +176,15 @@ def new_inscription():
     tx_data["type"] = "inscription"
     if not tx_data.get("name"):
         return "invalid name", 404
-    
+
     tx_data['content'] = tx_data.get("name") + ' se ha inscrito.'
-    tx_data["IP"] = "Una IP"      #Lo proporciona el frontend
-    
+    tx_data["IP"] = request.remote_addr
+
     tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     blockchain.add_new_transaction(tx_data)
-    
+
     return "Success", 201
-    
+
 
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query

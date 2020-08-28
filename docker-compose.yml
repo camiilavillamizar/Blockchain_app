@@ -40,7 +40,7 @@ services:
         environment: 
             - flask_port=5000
             - CONNECTED_NODE_ADDRESS=http://reverseproxy_service/node
-            - HOST_MACHINE=http://localhost/node
+            - RUNTIME_ENV=DOCKER_ENVIRONMENT
         volumes: 
             - ./blockchain:/blockchain
         networks: 

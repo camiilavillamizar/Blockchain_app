@@ -9,7 +9,9 @@ from app import app
 
 # The node with which our application interacts, there can be multiple
 # such nodes as well.
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000" #os.environ.get('CONNECTED_NODE_ADDRESS')
+RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
+CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV =='DOCKER_ENVIRONMENT'  else "http://127.0.0.1:8000"
+
 
 posts = []
 stamplist = []
@@ -98,14 +100,14 @@ def index():
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts=posts,
-                           node_address = CONNECTED_NODE_ADDRESS, #request.url_root,
+                           node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
 @app.route('/inscription')
 def inscription():
     return render_template('inscription.html',
-                           node_address = CONNECTED_NODE_ADDRESS, #request.url_root,
+                           node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -117,8 +119,7 @@ def submit_textarea_i():
     post_object = {
         'type': 'inscription',
         'content': " ",
-        'name': name,
-        'IP': request.remote_addr  # La proporciona el frontend
+        'name': name # La proporciona el frontend
     }
 
     new_tx_address = "{}/new_inscription".format(CONNECTED_NODE_ADDRESS)
@@ -139,8 +140,7 @@ def submit_textarea_t():
     post_object = {
         'type': 'transaction',
         'content': post_content,
-        'name': 'Nombre',
-        'IP': request.remote_addr,
+        'name': 'Nombre'
     }
 
     # Submit a transaction
