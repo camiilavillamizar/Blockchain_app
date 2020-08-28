@@ -176,7 +176,7 @@ def new_inscription():
     if not tx_data.get("name"):
         return "invalid name", 404
     
-    ttx_data['content'] = tx_data.get("name") + ' se ha inscrito.'
+    tx_data['content'] = tx_data.get("name") + ' se ha inscrito.'
     tx_data["IP"] = "Una IP"      #Lo proporciona el frontend
     
     tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
