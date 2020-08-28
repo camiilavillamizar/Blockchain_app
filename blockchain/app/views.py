@@ -9,7 +9,7 @@ from app import app
 
 # The node with which our application interacts, there can be multiple
 # such nodes as well.
-CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS')
+CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000" #os.environ.get('CONNECTED_NODE_ADDRESS')
 
 posts = []
 stamplist = []
@@ -41,7 +41,7 @@ def fetch_posts():
                     # tx["index"] = block["index"]
                     tx["hash"] = block["previous_hash"]
                     # content.append(tx)
-                    if tx["timestamp"] not in stamplist:
+                    if tx["datetime"] not in stamplist:
                         data.append(tx)
                         stamplist.append(tx["stamp"])
 
@@ -74,7 +74,7 @@ def show_posts():
     content = json.load(fileread)
 
     global posts
-    posts = sorted(content, key=lambda k: k['timestamp'],
+    posts = sorted(content, key=lambda k: k['datetime'],
                    reverse=True)
 
 
@@ -98,14 +98,14 @@ def index():
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts=posts,
-                           node_address=request.url_root,
+                           node_address = CONNECTED_NODE_ADDRESS, #request.url_root,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
 @app.route('/inscription')
 def inscription():
     return render_template('inscription.html',
-                           node_address=request.url_root,
+                           node_address = CONNECTED_NODE_ADDRESS, #request.url_root,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
