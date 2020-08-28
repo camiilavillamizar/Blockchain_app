@@ -22,7 +22,7 @@ def fetch_posts():
     if response.status_code == 200:
 
         chain = json.loads(response.content)
-        global hashlist
+        global stamplist
         # filename = 'logs/tx.json'
 
         try:
@@ -41,7 +41,7 @@ def fetch_posts():
                     # content.append(tx)
                     if tx["timestamp"] not in stamplist:
                         data.append(tx)
-                        hashlist.append(tx["stamp"])
+                        stamplist.append(tx["stamp"])
 
                     # print(tx)
             #txwrite.seek(0)
