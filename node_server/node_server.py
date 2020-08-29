@@ -157,8 +157,6 @@ def new_transaction():
     tx_data["name"] = "Un Nombre"  # Lo proporciona el frontend
     tx_data["IP"] = request.remote_addr  # Lo proporciona el frontend
 
-    required_fields = ["content"]
-
     if not tx_data.get("content"):
         return "invalid transaction data", 404
 
@@ -171,7 +169,6 @@ def new_transaction():
 @app.route('/new_inscription', methods=['POST'])
 def new_inscription():
     tx_data = request.get_json()
-    required_fields = ["name"]
 
     tx_data["type"] = "inscription"
     if not tx_data.get("name"):
