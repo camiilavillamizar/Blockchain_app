@@ -3,7 +3,8 @@
 {% block content %}
 
     <center>
-	<form action="/submit-inscription" id="textform" method="post">
+    <h4>Digite el nombre con el cual se encuentra registrado</h4>
+	<form action="/submit_IP_update" id="textform" method="post">
 	    <textarea name="name" rows="4" cols="50" placeholder="Write your full name"></textarea>
 	    <br>
 	    <input type="submit" value="Post">
@@ -13,6 +14,5 @@
     <br>
 
 	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
-	<a href="/update_IP" target="_blank"><button>Already registered</button></a>
 	
 {% endblock %}

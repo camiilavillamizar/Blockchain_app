@@ -66,17 +66,19 @@ def submit_textarea_i():
     name = request.form['name']
 
     post_object = {
-        'type': 'inscription',
-        'content': " ",
-        'name': name 
+        'type': "inscription",
+        'name': name,
+        'IP' : request.remote_addr,
+        'content' : name + ' se ha inscrito.',
+        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
-    new_tx_address = "{}/new_inscription".format(CONNECTED_NODE_ADDRESS)
+    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/inscription')
+    return redirect('/')
 
 
 @app.route('/submit-transaction/user/<user_name>', methods=['POST'])
@@ -85,11 +87,13 @@ def submit_textarea_t(user_name):
     Endpoint to create a new transaction via our application.
     """
     post_content = request.form["content"]
-    print(user_name)
+    
     post_object = {
         'type': 'transaction',
+        'name' : user_name,
+        'IP' : request.remote_addr,
         'content': post_content,
-        'name': user_name
+        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
     # Submit a transaction
@@ -100,3 +104,30 @@ def submit_textarea_t(user_name):
                   headers={'Content-type': 'application/json'})
 
     return redirect('/')
+
+@app.route('/update_IP')
+def update_IP():
+    return render_template('update_ip.html',
+                           title='YourNet: Decentralized '
+                                 'content sharing',
+                           node_address = CONNECTED_NODE_ADDRESS,
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+            
+@app.route('/submit_IP_update', methods=['POST'])
+def submit_IP_update():
+    name = request.form['name']
+
+    
+    #Si el nombre existe se cambia, si no, no
+    post_object = {
+        'type': 'update',
+        'name': name,
+        'IP': request.remote_addr,
+        'content': name + ' ha actualizado su IP',
+        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    }
+
+    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    requests.post(new_tx_address,
+                  json = post_object,
+                  headers={'Content-type': 'application/json'})

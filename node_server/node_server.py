@@ -151,33 +151,12 @@ peers = set()
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     tx_data = request.get_json()
+    required_fields = ['name', 'content']
 
-    # Se definen los nuevos atributos
-    tx_data["type"] = "transaction"
-    tx_data["name"] = tx_data.get("name") 
-    tx_data["IP"] = request.remote_addr  
+    for field in required_fields:
+        if not tx_data.get(field):
+            return "invalid transaction data", 404
 
-    if not tx_data.get("content"):
-        return "invalid transaction data", 404
-
-    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    blockchain.add_new_transaction(tx_data)
-
-    return "Success", 201
-
-
-@app.route('/new_inscription', methods=['POST'])
-def new_inscription():
-    tx_data = request.get_json()
-
-    tx_data["type"] = "inscription"
-    if not tx_data.get("name"):
-        return "invalid name", 404
-
-    tx_data['content'] = tx_data.get("name") + ' se ha inscrito.'
-    tx_data["IP"] = request.remote_addr
-
-    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     blockchain.add_new_transaction(tx_data)
 
     return "Success", 201
