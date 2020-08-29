@@ -5,11 +5,12 @@
 	<br>
 
 	<center>
-	<form action="/submit-transaction" id="textform" method="post">
+	<h1>Welcome {{user_name}}</h1>
+	<form action="/submit-transaction/user/{{user_name}}" id="textform" method="post">
 	    <textarea name="content" rows="4" cols="50" placeholder="Just write whatever you want to..."></textarea>
 	    <br>
 	    <input type="submit" value="Post">
-	</form>
+	</form> 
 	</center>
 
 	<br>

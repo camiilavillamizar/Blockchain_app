@@ -154,8 +154,8 @@ def new_transaction():
 
     # Se definen los nuevos atributos
     tx_data["type"] = "transaction"
-    tx_data["name"] = "Un Nombre"  # Lo proporciona el frontend
-    tx_data["IP"] = request.remote_addr  # Lo proporciona el frontend
+    tx_data["name"] = tx_data.get("name") 
+    tx_data["IP"] = request.remote_addr  
 
     required_fields = ["content"]
 
