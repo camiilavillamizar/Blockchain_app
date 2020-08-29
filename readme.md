@@ -6,9 +6,9 @@
    - [How to start the node application](#How-to-start-the-node-application)
      - [Common Steps](#Common-Steps)
      - [Windows](#Windows)
-     - [Mac & Linux](#Mac-&-Linux)
+     - [Mac & Linux](#mac--linux)
 3. [How to start a node tunnel](#How-to-start-a-node-tunnel)
-    - [Windows](#Windows)
+    - [Windows](#Windows-1)
     - [Mac](#Mac)
     - [Linux](#Linux)
 
