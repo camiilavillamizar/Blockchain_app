@@ -72,8 +72,9 @@ def index():
     show_posts()
     actualIP = request.remote_addr
     for post in range (len(posts)):
-        if (posts[post]['IP'] == actualIP): 
-            return render_template('index.html',
+        if (posts[post]['type'] == 'inscription'):
+            if (posts[post]['IP'] == actualIP): 
+                return render_template('index.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts = posts,
@@ -101,7 +102,9 @@ def submit_textarea_i():
         'type': "inscription",
         'name': name,
         'IP' : request.remote_addr,
-        'content' : name + ' se ha inscrito.',
+        'content' : {
+            'text': name + ' se ha inscrito.'
+        },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
@@ -124,7 +127,9 @@ def submit_textarea_t(user_name):
         'type': 'transaction',
         'name' : user_name,
         'IP' : request.remote_addr,
-        'content': post_content,
+        'content': {
+            'text': post_content
+        },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
@@ -156,13 +161,23 @@ def submit_IP_update():
     De esta manera no existirá problema cuando el usuario digite un usuario
     que no se haya inscrito.
     """
+
+    for post in posts: 
+        if (name == post['name']):
+            previous_ip = post['IP']
+    
+    new_ip = request.remote_addr
     post_object = {
         'type': 'update',
         'name': name,
-        'IP': request.remote_addr,
-        'content': name + ' ha actualizado su IP',
+        'IP': new_ip,
+        'content': {
+            'text': name + ' ha cambiado de ip ' + previous_ip + ' a '+ new_ip,
+            'previous_ip': previous_ip,
+        },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
+
 
     new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
     requests.post(new_tx_address,
