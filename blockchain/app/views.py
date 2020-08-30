@@ -14,6 +14,7 @@ CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV
 
 
 posts = []
+stamplist =[]
 
 def fetch_posts():
     """
@@ -23,23 +24,52 @@ def fetch_posts():
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
-        content = []
         chain = json.loads(response.content)
-        for block in chain["chain"]:
-            for tx in block["transactions"]:
-                tx["index"] = block["index"]
-                tx["hash"] = block["previous_hash"]
-                content.append(tx)
+        global stamplist
+        # filename = 'logs/tx.json'
+        try:
+            txwrite = open('logs/tx.json', 'r+')
+        except:
+            open('logs/tx.json', 'x')
+            txwrite = open('logs/tx.json', 'r+')
 
-        global posts
-        posts = sorted(content, key=lambda k: k['datetime'],
-                       reverse=True)
+        try:
+            data = json.load(txwrite)
 
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    tx["hash"] = block["previous_hash"]
+                    if tx["datetime"] not in stamplist:
+                        data.append(tx)
+                        stamplist.append(tx["stamp"])
+        except:
+            data = []
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    tx["hash"] = block["previous_hash"]
+                    data.append(tx)
 
+        # TODO remove dupes
+        # save vals
+        txwrite.seek(0)
+        json.dump(data, txwrite)    
+def show_posts():
+    """
+    Function to fetch posts from a json file and display them
+    """
+    fileread = open('logs/tx.json', 'r+')
+    content = json.load(fileread)
+
+    global posts
+    posts = sorted(content, key=lambda k: k['datetime'],
+                   reverse=True)
+
+ 
 
 @app.route('/')
 def index():
     fetch_posts()
+    show_posts()
     actualIP = request.remote_addr
     for post in range (len(posts)):
         if (posts[post]['IP'] == actualIP): 
@@ -56,6 +86,8 @@ def index():
 @app.route('/inscription')
 def inscription():
     return render_template('inscription.html',
+                            title='YourNet: Decentralized '
+                                 'content sharing',
                            node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
@@ -118,7 +150,12 @@ def submit_IP_update():
     name = request.form['name']
 
     
-    #Si el nombre existe se cambia, si no, no
+    """
+    El front-end de la vista update_ip.html se puede cambiar por una lista de
+    todos los usuarios que hay para que solo se deba seleccionar el usuario.
+    De esta manera no existirá problema cuando el usuario digite un usuario
+    que no se haya inscrito.
+    """
     post_object = {
         'type': 'update',
         'name': name,
@@ -131,3 +168,5 @@ def submit_IP_update():
     requests.post(new_tx_address,
                   json = post_object,
                   headers={'Content-type': 'application/json'})
+
+    return redirect('/update_IP')
