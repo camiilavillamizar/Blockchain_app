@@ -72,7 +72,7 @@ def index():
     show_posts()
     actualIP = request.remote_addr
     for post in range (len(posts)):
-        if (posts[post]['type'] == 'inscription'):
+        if (posts[post]['type'] == 'inscription' or posts[post]['type'] == 'update'):
             if (posts[post]['IP'] == actualIP): 
                 return render_template('index.html',
                            title='YourNet: Decentralized '
@@ -142,6 +142,7 @@ def submit_textarea_t(user_name):
 
     return redirect('/')
 
+#UPDATE IP
 @app.route('/update_IP')
 def update_IP():
     return render_template('update_ip.html',
@@ -160,6 +161,8 @@ def submit_IP_update():
     todos los usuarios que hay para que solo se deba seleccionar el usuario.
     De esta manera no existirá problema cuando el usuario digite un usuario
     que no se haya inscrito.
+
+    Cuando esto se haya hecho se puede eliminar el for a continuación
     """
 
     for post in posts: 
@@ -178,10 +181,88 @@ def submit_IP_update():
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
-
+    """
+    Se debe de agregar el nodo con ip 'IP' y eliminar el nodo previous_ip.
+    Se guardan cambios donde se almacene la información
+    """
     new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
     requests.post(new_tx_address,
                   json = post_object,
                   headers={'Content-type': 'application/json'})
 
     return redirect('/update_IP')
+#-------------------------------------------
+#UPDATE NAME
+@app.route('/update_name')
+def update_name():
+    return render_template('update_name.html',
+                           title='YourNet: Decentralized '
+                                 'content sharing',
+                           node_address = CONNECTED_NODE_ADDRESS,
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+            
+@app.route('/submit_name_update', methods=['POST'])
+def submit_name_update():
+    name = request.form['name']
+
+    index = len(posts) - 1
+    while(index != 0):
+        if (posts[index]['IP'] == request.remote_addr):
+            previous_name = posts[index]['name']
+        index -=1
+
+    new_ip = request.remote_addr
+    post_object = {
+        'type': 'update',
+        'name': name,
+        'IP': request.remote_addr,
+        'content': {
+            'text': name + ' ha cambiado su nombre de ' + previous_name + ' a '+ name,
+            'previous_name': previous_name,
+        },
+        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    }
+
+    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    requests.post(new_tx_address,
+                  json = post_object,
+                  headers={'Content-type': 'application/json'})
+
+    return redirect('/update_name')
+#-------------------------------------------
+#LEAVE
+@app.route('/leave')
+def leave():
+    return render_template('leave.html',
+                           title='YourNet: Decentralized '
+                                 'content sharing',
+                           node_address = CONNECTED_NODE_ADDRESS,
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
+@app.route('/submit_leave', methods=['POST'])
+def submit_leave():
+ 
+    index = len(posts) - 1
+    while(index >= 0):
+        if (posts[index]['IP'] == request.remote_addr):
+            name = posts[index]['name']
+        index -=1
+
+    new_ip = request.remote_addr
+    post_object = {
+        'type': 'leave',
+        'name': name,
+        'IP': request.remote_addr,
+        'content': {
+            'text': name + ' ha salido de la cadena',
+            'previous_ip': request.remote_addr,
+        },
+        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    }
+
+    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    requests.post(new_tx_address,
+                  json = post_object,
+                  headers={'Content-type': 'application/json'})
+
+    return redirect('/')

@@ -1,0 +1,17 @@
+{% extends "base.html"%}
+
+{% block content %}
+
+    <center>
+    <h4>Seguro quiere irse?</h4>
+	<form action="/submit_leave" id="textform" method="post">
+	    <br>
+	    <input type="submit" value="Post">
+	</form>
+    </center>
+    
+    <br>
+
+	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
+	
+{% endblock %}
