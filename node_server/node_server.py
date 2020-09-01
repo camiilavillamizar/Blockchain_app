@@ -221,7 +221,12 @@ def create_app():
             return "Invalid data", 400
 
         # Add the node to the peer list
-        peers.add(node_address)
+        if node_address not in peers:
+            peers.add(node_address)
+            # enviar una orden de registro a todos los demás nodos
+            for node in peers:
+                requests.post("{}register_node".format(node),
+                              json={'node_address': node_address})
 
         # Return the consensus blockchain to the newly registered node
         # so that he can sync
