@@ -71,7 +71,7 @@ class multiNodesTestCase(unittest.TestCase):
         rs2 = requests.get('http://localhost:8001/pending_tx')
         self.assertNotEqual(rs1.content, rs2.content)
 
-    FIXME los nodos no realizan consenso cuando se minan en paralelo
+    # FIXME los nodos no realizan consenso cuando se minan en paralelo
     def test_consenso_paralelo(self):
         """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
         minarlo."""
@@ -103,7 +103,7 @@ class multiNodesTestCase(unittest.TestCase):
             'http://localhost:8001/chain').content)["chain"]
         print(ch2)
 
-    #     self.assertEqual(ch1, ch2)
+        self.assertEqual(ch1, ch2)
 
     def test_consenso_seq(self):
         """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
