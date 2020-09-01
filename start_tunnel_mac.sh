@@ -1,2 +1,1 @@
-cd ../ngrok/mac
-./ngrok http $1
+./ngrok/mac/ngrok	http $1
