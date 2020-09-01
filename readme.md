@@ -56,8 +56,8 @@
 
 ``` sh
  # replace PORT by the PORT NODE 
- # example ./start_tunnel_windows.sh 8000
- ./start_tunnel_windows.sh PORT 
+ # example start_tunnel_windows.sh 8000
+ start_tunnel_windows.bat PORT 
 ```
 
 #### Linux
@@ -65,7 +65,7 @@
 ``` sh
  # replace PORT by the PORT NODE 
  # example ./start_tunnel_linux.sh 8000
- ./start_tunnel_linux.sh PORT #replace PORT by the PORT NODE
+ ./start_tunnel_linux.sh PORT
 ```
 
 #### Mac
@@ -73,6 +73,6 @@
 ``` sh
  # replace PORT by the PORT NODE 
  # example ./start_tunnel_mac.sh 8000
- ./start_tunnel_mac.sh PORT #replace PORT by the PORT NODE
+ ./start_tunnel_mac.sh PORT
 ```
 
