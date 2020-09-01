@@ -151,11 +151,21 @@ peers = set()
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     tx_data = request.get_json()
-    required_fields = ['name', 'content']
+    contents = []
 
-    for field in required_fields:
-        if not tx_data.get(field):
-            return "invalid transaction data", 404
+    if(tx_data.get('type') == 'inscription'):
+        contents = ['name', 'password', 'email']
+
+    if(tx_data.get('type') == 'transaction'):
+        contents = ['text']
+
+    if not tx_data.get('user_name'):
+        return "invalid transaction data", 404
+
+    if (len(contents) > 0):
+        for cont in contents:
+            if not tx_data.get('content').get(cont):
+                return "invalid transaction data", 404
 
     blockchain.add_new_transaction(tx_data)
 

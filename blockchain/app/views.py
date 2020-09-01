@@ -72,15 +72,17 @@ def index():
     show_posts()
     actualIP = request.remote_addr
     for post in range (len(posts)):
-        if (posts[post]['type'] == 'inscription' or posts[post]['type'] == 'update'):
+        if (posts[post]['type'] == 'inscription' or (posts[post]['type'] == 'update' and 'previous_ip' in posts[post]['content'].keys())):
             if (posts[post]['IP'] == actualIP): 
                 return render_template('index.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
                            posts = posts,
-                           user_name = posts[post]['name'],
+                           user_name = posts[post]['user_name'],
+                           name = posts[post]['content']['name'],
                            node_address = CONNECTED_NODE_ADDRESS,
                            readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
+                break
     return redirect('/inscription')
 
 
@@ -96,14 +98,20 @@ def inscription():
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
 
+    user_name = request.form['user_name']
     name = request.form['name']
+    password = request.form['password']
+    email = request.form['email']
 
     post_object = {
         'type': "inscription",
-        'name': name,
+        'user_name': user_name,
         'IP' : request.remote_addr,
         'content' : {
-            'text': name + ' se ha inscrito.'
+            'text': user_name + ' se ha inscrito.',
+            'name': name,
+            'password': password,
+            'email': email
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
@@ -125,7 +133,7 @@ def submit_textarea_t(user_name):
     
     post_object = {
         'type': 'transaction',
-        'name' : user_name,
+        'user_name' : user_name,
         'IP' : request.remote_addr,
         'content': {
             'text': post_content
@@ -153,7 +161,7 @@ def update_IP():
             
 @app.route('/submit_IP_update', methods=['POST'])
 def submit_IP_update():
-    name = request.form['name']
+    user_name = request.form['user_name']
 
     
     """
@@ -162,20 +170,19 @@ def submit_IP_update():
     De esta manera no existirá problema cuando el usuario digite un usuario
     que no se haya inscrito.
 
-    Cuando esto se haya hecho se puede eliminar el for a continuación
     """
 
     for post in posts: 
-        if (name == post['name']):
+        if (user_name == post['user_name']):
             previous_ip = post['IP']
     
     new_ip = request.remote_addr
     post_object = {
         'type': 'update',
-        'name': name,
+        'user_name': user_name,
         'IP': new_ip,
         'content': {
-            'text': name + ' ha cambiado de ip ' + previous_ip + ' a '+ new_ip,
+            'text': user_name + ' ha cambiado de ip ' + previous_ip + ' a '+ new_ip,
             'previous_ip': previous_ip,
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -193,32 +200,32 @@ def submit_IP_update():
     return redirect('/update_IP')
 #-------------------------------------------
 #UPDATE NAME
-@app.route('/update_name')
-def update_name():
-    return render_template('update_name.html',
+@app.route('/update_user_name')
+def update_user_name():
+    return render_template('update_user_name.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
                            node_address = CONNECTED_NODE_ADDRESS,
                            readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
             
-@app.route('/submit_name_update', methods=['POST'])
-def submit_name_update():
-    name = request.form['name']
+@app.route('/submit_user_name_update', methods=['POST'])
+def submit_user_name_update():
+    user_name = request.form['user_name']
 
     index = len(posts) - 1
     while(index != 0):
         if (posts[index]['IP'] == request.remote_addr):
-            previous_name = posts[index]['name']
+            previous_user_name = posts[index]['user_name']
         index -=1
 
     new_ip = request.remote_addr
     post_object = {
         'type': 'update',
-        'name': name,
+        'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': name + ' ha cambiado su nombre de ' + previous_name + ' a '+ name,
-            'previous_name': previous_name,
+            'text': user_name + ' ha cambiado su usuario de ' + previous_user_name + ' a '+ user_name,
+            'previous_user_name': previous_user_name,
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
@@ -228,7 +235,7 @@ def submit_name_update():
                   json = post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/update_name')
+    return redirect('/update_user_name')
 #-------------------------------------------
 #LEAVE
 @app.route('/leave')
@@ -245,16 +252,16 @@ def submit_leave():
     index = len(posts) - 1
     while(index >= 0):
         if (posts[index]['IP'] == request.remote_addr):
-            name = posts[index]['name']
+            user_name = posts[index]['user_name']
         index -=1
 
     new_ip = request.remote_addr
     post_object = {
         'type': 'leave',
-        'name': name,
+        'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': name + ' ha salido de la cadena',
+            'text': user_name + ' ha salido de la cadena',
             'previous_ip': request.remote_addr,
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -265,4 +272,4 @@ def submit_leave():
                   json = post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/')
+    return redirect('/submit_leave')
