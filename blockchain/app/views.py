@@ -12,34 +12,82 @@ from app import app
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
 CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV =='DOCKER_ENVIRONMENT'  else "http://127.0.0.1:8000"
 
-
 posts = []
+stamplist =[]
 
 def fetch_posts():
     """
-    Function to fetch the chain from a blockchain node, parse the
-    data and store it locally.
+    Function to dump posts from a blockchain node to a json file
     """
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
-        content = []
+
         chain = json.loads(response.content)
-        for block in chain["chain"]:
-            for tx in block["transactions"]:
-                tx["index"] = block["index"]
-                tx["hash"] = block["previous_hash"]
-                content.append(tx)
+        global stamplist
+        # filename = 'logs/tx.json'
 
-        global posts
-        posts = sorted(content, key=lambda k: k['datetime'],
-                       reverse=True)
+        try:
+            txwrite = open('logs/tx.json', 'r+')
+        except:
+            open('logs/tx.json', 'x')
+            txwrite = open('logs/tx.json', 'r+')
 
+
+        try:
+            data = json.load(txwrite)
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    tx["hash"] = block["previous_hash"]
+                    if tx["datetime"] not in stamplist:
+                        data.append(tx)
+                        stamplist.append(tx["datetime"])
+
+                    # print(tx)
+            #txwrite.seek(0)
+            #json.dump(data, txwrite)
+
+        except:
+            print('file not found, creating...')
+            data = []
+            for block in chain["chain"]:
+                for tx in block["transactions"]:
+                    # tx["index"] = block["index"]
+                    tx["hash"] = block["previous_hash"]
+                    # content.append(tx)
+                    data.append(tx)
+                    # print(tx)
+            #txwrite.seek(0)
+            #json.dump(data, txwrite)
+
+        # save vals
+        txwrite.seek(0)
+        json.dump(data, txwrite)
+
+
+
+def show_posts():
+    """
+    Function to fetch posts from a json file and display them
+    """
+    fileread = open('logs/tx.json', 'r+')
+    content = json.load(fileread)
+
+    global posts
+    posts = sorted(content, key=lambda k: k['datetime'],
+                   reverse=True)
+    
+def search_posts():
+    """
+    Function to fetch posts from a json file and display those who contain the specified string
+    """
+    #TBD
 
 
 @app.route('/')
 def index():
     fetch_posts()
+    show_posts()
     actualIP = request.remote_addr
     for post in range (len(posts)):
         if (posts[post]['IP'] == actualIP): 
