@@ -1,6 +1,7 @@
 from hashlib import sha256
 import json
 import time
+import sys
 from datetime import datetime
 
 from flask import Flask, request
@@ -284,6 +285,33 @@ def create_app():
             if not added:
                 raise Exception("The chain dump is tampered!!")
         return generated_blockchain
+
+    @app.route('/remove_node', methods=['POST'])
+    def broadcast_remove_block():
+        """ elimina el nodo dado y le envía la misma orden
+        a todos los nodos enlazados. """
+        nonlocal peers
+        peer = request.get_json()["node_address"]
+        print(peer)
+        print(peers)
+        if peer in peers:
+            peers.remove(peer)
+        return "eliminado con éxito."
+
+    def shutdown():
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug server')
+        func()
+
+    @app.route('/leave')
+    def leave_network():
+        """ le ordena al nodo abandonar la red, lo que hace anunciándose. """
+        for peer in peers:
+            requests.post('{}remove_node'.format(peer),
+                          json={'node_address': request.host_url})
+        shutdown()
+        return "Me han eliminado con éxito de la red."
 
     # endpoint to add a block mined by someone else to
     # the node's chain. The block is first verified by the node

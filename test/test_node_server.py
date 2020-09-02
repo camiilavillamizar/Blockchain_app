@@ -7,6 +7,11 @@ import json
 
 from node_server import create_app
 
+# aliases
+nodo1 = "http://localhost:8000"
+nodo2 = "http://localhost:8001"
+nodo3 = "http://localhost:8002"
+
 
 class BasicsTestCase(unittest.TestCase):
     def setUp(self):
@@ -32,9 +37,9 @@ class BasicsTestCase(unittest.TestCase):
                 '/new_transaction',
                 json={'content': content}
             ), ["primer mensaje", "segundo mensaje"])
-        queue = self.app.get('/pending_tx')
-        print(queue.data)
-        self.assertEqual(5, 5)
+        queue = json.loads(self.app.get('/pending_tx').data)
+        self.assertCountEqual(["primer mensaje", "segundo mensaje"],
+                              [x["content"] for x in queue])
 
 
 class multiNodesTestCase(unittest.TestCase):
@@ -60,9 +65,12 @@ class multiNodesTestCase(unittest.TestCase):
 
     def tearDown(self):
         """ elimina los servidores """
-        os.kill(self.pid1, signal.SIGKILL)
-        os.kill(self.pid2, signal.SIGKILL)
-        os.kill(self.pid3, signal.SIGKILL)
+        for pid in [self.pid1, self.pid2, self.pid3]:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                # looks pretty bad, but ¯\_(ツ)_/¯
+                pass
 
     # ### ### pruebas
 
@@ -115,29 +123,25 @@ class multiNodesTestCase(unittest.TestCase):
         """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
         minarlo."""
         # primero conectamos los nodos
-        requests.post("http://localhost:8001/register_with",
-                      json={'node_address': 'http://localhost:8000'})
+        requests.post(nodo2 + "/register_with",
+                      json={'node_address': nodo1})
 
         def commentNmine(args):
-            print("agregando la transacción")
             requests.post(
                 args["url"] + "/new_transaction",
                 json={'content': args["content"]}
             )
-            print("minando la transacción")
             requests.get(args["url"] + "/mine")
 
         # se ejecuta de forma secuencial
-        commentNmine({"url": "http://localhost:8000", "content": "contenido1"})
-        commentNmine({"url": "http://localhost:8001", "content": "contenido2"})
+        commentNmine({"url": nodo1, "content": "contenido1"})
+        commentNmine({"url": nodo2, "content": "contenido2"})
 
         # las cadenas deberían ser iguales entre los nodos
         ch1 = json.loads(requests.get(
-            'http://localhost:8000/chain').content)["chain"]
-        print(ch1)
+            nodo1 + '/chain').content)["chain"]
         ch2 = json.loads(requests.get(
-            'http://localhost:8001/chain').content)["chain"]
-        print(ch2)
+            nodo2 + '/chain').content)["chain"]
 
         self.assertEqual(ch1, ch2)
 
@@ -147,23 +151,24 @@ class multiNodesTestCase(unittest.TestCase):
 
         def checkPeers(addr):
             return json.loads(
-                requests.get(
-                    "http://localhost:{}/chain".format(addr)
-                ).content)["peers"]
+                requests.get(addr + "/chain").content)["peers"]
 
-        requests.post("http://localhost:8001/register_with",
-                      json={'node_address': "http://localhost:8000"})
+        requests.post(nodo2 + "/register_with",
+                      json={'node_address': nodo1})
 
-        self.assertCountEqual(checkPeers("8000"), ["http://localhost:8001/"])
-        self.assertCountEqual(checkPeers("8001"), ["http://localhost:8000/"])
-        self.assertCountEqual(checkPeers("8002"), [])
+        self.assertCountEqual(checkPeers(nodo1), [nodo2 + "/"])
+        self.assertCountEqual(checkPeers(nodo2), [nodo1 + "/"])
+        self.assertCountEqual(checkPeers(nodo3), [])
 
-        requests.post("http://localhost:8002/register_with",
-                      json={'node_address': "http://localhost:8000"})
+        requests.post(nodo3 + "/register_with",
+                      json={'node_address': nodo1})
 
-        self.assertCountEqual(checkPeers("8000"), ["http://localhost:8001/",
-                                                   "http://localhost:8002/"])
-        self.assertCountEqual(checkPeers("8001"), ["http://localhost:8000/",
-                                                   "http://localhost:8002/"])
-        self.assertCountEqual(checkPeers("8002"), ["http://localhost:8000/",
-                                                   "http://localhost:8001/"])
+        self.assertCountEqual(checkPeers(nodo1), [nodo2 + "/", nodo3 + "/"])
+        self.assertCountEqual(checkPeers(nodo2), [nodo1 + "/", nodo3 + "/"])
+        self.assertCountEqual(checkPeers(nodo3), [nodo1 + "/", nodo2 + "/"])
+
+        # prueba eliminar nodos
+        requests.get(nodo2 + "/leave")
+
+        self.assertCountEqual(checkPeers(nodo1), [nodo3 + "/"])
+        self.assertCountEqual(checkPeers(nodo3), [nodo1 + "/"])
