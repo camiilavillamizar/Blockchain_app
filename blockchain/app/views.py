@@ -71,17 +71,17 @@ def index():
     fetch_posts()
     show_posts()
     actualIP = request.remote_addr
-    for post in range (len(posts)):
-        if (posts[post]['type'] == 'inscription' or (posts[post]['type'] == 'update' and 'previous_ip' in posts[post]['content'].keys())):
-            if (posts[post]['IP'] == actualIP): 
-                return render_template('index.html',
-                           title='YourNet: Decentralized '
-                                 'content sharing',
-                           posts = posts,
-                           user_name = posts[post]['user_name'],
-                           name = posts[post]['content']['name'],
-                           node_address = CONNECTED_NODE_ADDRESS,
-                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
+    leave = False
+    for post in posts: 
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True 
+
+    for post in posts:
+        if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+            if (post['IP'] == actualIP and leave == False): 
+                return render_template('index.html', title='YourNet: Decentralized ' 'content sharing', posts = posts,
+                           user_name = post['user_name'], name = post['content']['name'],
+                           node_address = CONNECTED_NODE_ADDRESS, readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
                 break
     return redirect('/inscription')
 
@@ -163,41 +163,34 @@ def update_IP():
 def submit_IP_update():
     user_name = request.form['user_name']
 
-    
-    """
-    El front-end de la vista update_ip.html se puede cambiar por una lista de
-    todos los usuarios que hay para que solo se deba seleccionar el usuario.
-    De esta manera no existirá problema cuando el usuario digite un usuario
-    que no se haya inscrito.
+    try: 
+        for post in posts: 
+            if (user_name == post['user_name']):
+                previous_ip = post['IP']
+        
+        new_ip = request.remote_addr
+        post_object = {
+            'type': 'update',
+            'user_name': user_name,
+            'IP': new_ip,
+            'content': {
+                'text': user_name + ' ha cambiado de ip ' + previous_ip + ' a '+ new_ip,
+                'previous_ip': previous_ip,
+            },
+            'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        }
 
-    """
+        """
+        Se debe de agregar el nodo con ip 'IP' y eliminar el nodo previous_ip.
+        """
+        new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+        requests.post(new_tx_address,
+                    json = post_object,
+                    headers={'Content-type': 'application/json'})
 
-    for post in posts: 
-        if (user_name == post['user_name']):
-            previous_ip = post['IP']
-    
-    new_ip = request.remote_addr
-    post_object = {
-        'type': 'update',
-        'user_name': user_name,
-        'IP': new_ip,
-        'content': {
-            'text': user_name + ' ha cambiado de ip ' + previous_ip + ' a '+ new_ip,
-            'previous_ip': previous_ip,
-        },
-        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    }
-
-    """
-    Se debe de agregar el nodo con ip 'IP' y eliminar el nodo previous_ip.
-    Se guardan cambios donde se almacene la información
-    """
-    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
-    requests.post(new_tx_address,
-                  json = post_object,
-                  headers={'Content-type': 'application/json'})
-
-    return redirect('/update_IP')
+        return redirect('/update_IP')
+    except:
+        return "You are not registered", 404
 #-------------------------------------------
 #UPDATE NAME
 @app.route('/update_user_name')
@@ -248,7 +241,7 @@ def leave():
 
 @app.route('/submit_leave', methods=['POST'])
 def submit_leave():
- 
+
     index = len(posts) - 1
     while(index >= 0):
         if (posts[index]['IP'] == request.remote_addr):
@@ -272,4 +265,4 @@ def submit_leave():
                   json = post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/submit_leave')
+    return redirect('/leave')
