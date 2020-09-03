@@ -14,8 +14,6 @@ CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV
 
 
 posts = []
-stamplist =[]
-
 def fetch_posts():
     """
     Function to fetch the chain from a blockchain node, parse the
@@ -24,52 +22,23 @@ def fetch_posts():
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
     if response.status_code == 200:
+        content = []
         chain = json.loads(response.content)
-        global stamplist
-        # filename = 'logs/tx.json'
-        try:
-            txwrite = open('logs/tx.json', 'r+')
-        except:
-            open('logs/tx.json', 'x')
-            txwrite = open('logs/tx.json', 'r+')
+        for block in chain["chain"]:
+            for tx in block["transactions"]:
+                tx["index"] = block["index"]
+                tx["hash"] = block["previous_hash"]
+                content.append(tx)
 
-        try:
-            data = json.load(txwrite)
-
-            for block in chain["chain"]:
-                for tx in block["transactions"]:
-                    tx["hash"] = block["previous_hash"]
-                    if tx["datetime"] not in stamplist:
-                        data.append(tx)
-                        stamplist.append(tx["stamp"])
-        except:
-            data = []
-            for block in chain["chain"]:
-                for tx in block["transactions"]:
-                    tx["hash"] = block["previous_hash"]
-                    data.append(tx)
-
-        # TODO remove dupes
-        # save vals
-        txwrite.seek(0)
-        json.dump(data, txwrite)    
-def show_posts():
-    """
-    Function to fetch posts from a json file and display them
-    """
-    fileread = open('logs/tx.json', 'r+')
-    content = json.load(fileread)
-
-    global posts
-    posts = sorted(content, key=lambda k: k['datetime'],
-                   reverse=True)
+        global posts
+        posts = sorted(content, key=lambda k: k['datetime'],
+                       reverse=True)
 
  
 
 @app.route('/')
 def index():
     fetch_posts()
-    show_posts()
     actualIP = request.remote_addr
     leave = False
     for post in posts: 
@@ -88,13 +57,23 @@ def index():
 
 @app.route('/inscription')
 def inscription():
-    return render_template('inscription.html',
-                            title='YourNet: Decentralized '
-                                 'content sharing',
+    fetch_posts()
+    leave = False
+    actualIP = request.remote_addr
+
+    for post in posts: 
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True 
+
+    for post in posts: 
+        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
+            if( post['IP'] == request.remote_addr and leave == False):
+                return redirect('/')
+   
+    return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
                            node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
-
+    
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
 
@@ -203,11 +182,9 @@ def update_user_name():
 def submit_user_name_update():
     user_name = request.form['user_name']
 
-    index = len(posts) - 1
-    while(index != 0):
-        if (posts[index]['IP'] == request.remote_addr):
-            previous_user_name = posts[index]['user_name']
-        index -=1
+    for post in posts: 
+        if post['IP'] == request.remote_addr:
+            previous_user_name = post['user_name']
 
     new_ip = request.remote_addr
     post_object = {
@@ -240,13 +217,10 @@ def leave():
 @app.route('/submit_leave', methods=['POST'])
 def submit_leave():
 
-    index = len(posts) - 1
-    while(index >= 0):
-        if (posts[index]['IP'] == request.remote_addr):
-            user_name = posts[index]['user_name']
-        index -=1
+    for post in posts: 
+        if post['IP'] == request.remote_addr:
+            user_name = post['user_name']
 
-    new_ip = request.remote_addr
     post_object = {
         'type': 'leave',
         'user_name': user_name,
