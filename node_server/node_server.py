@@ -154,7 +154,7 @@ def new_transaction():
     contents = []
 
     if(tx_data.get('type') == 'inscription'):
-        contents = ['name', 'password', 'email']
+        contents = ['name', 'email']
 
     if(tx_data.get('type') == 'transaction'):
         contents = ['text']

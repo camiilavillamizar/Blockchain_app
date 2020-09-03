@@ -100,7 +100,6 @@ def submit_textarea_i():
 
     user_name = request.form['user_name']
     name = request.form['name']
-    password = request.form['password']
     email = request.form['email']
 
     post_object = {
@@ -110,7 +109,6 @@ def submit_textarea_i():
         'content' : {
             'text': user_name + ' se ha inscrito.',
             'name': name,
-            'password': password,
             'email': email
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
