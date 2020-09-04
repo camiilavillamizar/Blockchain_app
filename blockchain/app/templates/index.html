@@ -1,108 +1,156 @@
-<!-- extend base layout -->
 {% extends "base.html" %}
 
 {% block content %}
-	<br>
 
-	<center>
-	<h1>Welcome {{user_name}}</h1>
-	<form action="/submit-transaction/user/{{user_name}}" id="textform" method="post">
-	    <textarea name="content" rows="4" cols="50" placeholder="Just write whatever you want to..."></textarea>
-	    <br>
-	    <input type="submit" value="Post">
-	</form> 
-	</center>
 
-	<br>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="/"><h1>YourNet</h1></a>
+        <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="navbar-collapse collapse" id="navbarResponsive" >
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Home
+              </a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">{{user_name}}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">About</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  <br>
+    <!-- Page Content -->
+    <div class="container">
+  
+      <div class="row">
 
-	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
-	<a href="/"><button>Resync</button></a>
+        <!-- Entries Column -->
+        <div class="col-md-8 mt-4">
+            <h1 class="my-4 display-4">Welcome {{user_name}}</h1>
+            
+            <!-- Post Form -->
+            <div class="card mb-4">
+              <div class="card-body">
+                  <form action="/submit-transaction/user/{{user_name}}" id="textarea" method="POST">
+                    <textarea name="content" id="postContent" cols="30" rows="10" class="form-control" placeholder="Just write whatever you want to..."></textarea>
+                    <br>
+                    <input type="submit" value="Post" class="btn btn-primary btn-block">
+                  </form>
+                  <br>
+                  <a href="{{node_address}}/mine" target="_blank"><button class="btn btn-outline-primary">Request to mine</button></a>
+              </div>
 
-	<div style="margin: 20px;">
+            </div>
 
-    {% for post in posts %}
-    <div class="post_box">
-	   <div class="post_box-header">
-	      <div class="post_box-options"><button class="option-btn">Reply</button></div>
-	      <div style="background: rgb(0, 97, 146) none repeat scroll 0% 0%; box-shadow: rgb(0, 97, 146) 0px 0px 0px 2px;" class="post_box-avatar">{{post.name[0]}}</div>
-		  <div class="name-header">{{post.name}}</div>
-		  
-		  {% if post.type == "transaction" %}
-			 <div class="post_box-subtitle"> Posted at <i>{{post.datetime}}</i></div>
-		  {% else %}
-			 <div class="post_box-subtitle"> Signed up at <i>{{post.datetime}}</i></div>
-		  {% endif %}
-	      
-	   </div>
-	   <div>
-	      <div class="post_box-body">
-	         <p>{{post.content}}</p>
-	      </div>
-	   </div>
-	</div>
-	{% endfor %}
+          {% for post in posts %}
 
-	<style>
-		.post_box {
-		    background: #fff;
-		    padding: 12px 0px 0px 12px;
-		    margin-top: 0px;
-		    margin-bottom: 8px;
-		    border-top: 1px solid #f0f0f0;
-		}
-
-		.post_box-header {
-		    padding-bottom: 12px;
-		}
-
-		.post_box-avatar {
-		    width: 38px;
-		    height: 38px;
-		    border-radius: 50%;
-		    display: flex;
-		    justify-content: center;
-		    align-items: center;
-		    color: white;
-		    font-size: 22px;
-		    float: left;
-		    margin-right: 16px;
-		    border: 1px solid #fff;
-		    box-shadow: 0px 0px 0px 2px #f00;
-		}
-
-		.post_box-avatar::after {
-		    content:"";
-		    display:block;
-		}
-
-		.post_box-name {
-		    font-weight: bold;
-		}
-
-		.post_box-subtitle {
-		    color: #777;
-		}
-
-		.post_box-body {
-		    margin-top: 16px;
-		    margin-bottom: 8px;
-		}
-
-		.post_box-options {
-		    float: right;
-		}
-		.option-btn {
-		    background: #f8f8f8;
-		    border: none;
-		    color: #2c3e50;
-		    padding: 7px;
-		    cursor: pointer;
-		    font-size: 14px;
-		    margin-left: 2px;
-		    margin-right: 2px;
-		    outline: none;
-		    height: 42px;
-		}
-	</style>
+          <!-- Post -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h2 class="card-title">{{post.name}}</h2>
+              <p>{{post.content}}</p>
+              <a href="#" class="btn btn-primary">Read More →</a>
+            </div>
+            <div class="card-footer text-muted">
+              {% if post.type == "transaction" %}
+              Posted at {{post.datetime}}
+              {% else %}
+              Signed up at {{post.datetime}}
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+  
+  
+          <!-- Pagination -->
+          <ul class="pagination justify-content-center mb-4">
+            <li class="page-item">
+              <a class="page-link" href="#">← Older</a>
+            </li>
+            <li class="page-item disabled">
+              <a class="page-link" href="#">Newer →</a>
+            </li>
+          </ul>
+  
+        </div>
+  
+        <!-- Sidebar Widgets Column -->
+        <div class="col-md-4 mt-5">
+  
+          <!-- Search Widget -->
+          <div class="card my-4">
+            <h5 class="card-header">Search</h5>
+            <div class="card-body">
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search for...">
+                <span class="input-group-append">
+                  <button class="btn btn-secondary" type="button">Go!</button>
+                </span>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Categories Widget -->
+          <div class="card my-4">
+            <h5 class="card-header">Categories</h5>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-6">
+                  <ul class="list-unstyled mb-0">
+                    <li>
+                      <a href="#" class="btn btn-outline-primary btn-block">Link 1</a>
+                    </li>
+                    <li>
+                      <a href="#" class="btn btn-outline-primary btn-block mt-2">Link 2</a>
+                    </li>
+                    <li>
+                      <a href="#" class="btn btn-outline-primary btn-block mt-2">Link 3</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-lg-6">
+                  <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo, laboriosam?</p>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Side Widget -->
+          <div class="card my-4">
+            <h5 class="card-header">Side Widget</h5>
+            <div class="card-body">
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Aut mollitia laboriosam in fuga suscipit aliquid amet quia dolorem. Quaerat, nulla.</p>
+            </div>
+          </div>
+  
+        </div>
+  
+      </div>
+      <!-- /.row -->
+  
     </div>
+    <!-- /.container -->
+  
+    <!-- Footer -->
+    <footer class="py-5 bg-dark">
+      <div class="container">
+        <p class="m-0 text-center text-white">Copyright © YourNet 2020</p>
+      </div>
+      <!-- /.container -->
+    </footer>
+  
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  
+</div>
 {% endblock %}
+
