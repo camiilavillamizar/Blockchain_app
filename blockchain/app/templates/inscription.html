@@ -4,7 +4,9 @@
 
     <center>
 	<form action="/submit-inscription" id="textform" method="post">
-	    <textarea name="name" rows="4" cols="50" placeholder="Write your full name"></textarea>
+		<textarea name="user_name" rows="1" cols="40" placeholder="Write your username"></textarea>
+		<textarea name="name" rows="1" cols="40" placeholder="Write your full name"></textarea>
+		<textarea name="email" rows="1" cols="40" placeholder="Write your email"></textarea>
 	    <br>
 	    <input type="submit" value="Post">
 	</form>
@@ -12,6 +14,7 @@
     
     <br>
 
-    <a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
-
+	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
+	<a href="/update_IP" target="_blank"><button>Already registered</button></a>
+	
 {% endblock %}

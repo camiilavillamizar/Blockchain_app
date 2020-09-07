@@ -5,7 +5,7 @@
 	<br>
 
 	<center>
-	<h1>Welcome {{user_name}}</h1>
+	<h1>Welcome {{name}}</h1> 
 	<form action="/submit-transaction/user/{{user_name}}" id="textform" method="post">
 	    <textarea name="content" rows="4" cols="50" placeholder="Just write whatever you want to..."></textarea>
 	    <br>
@@ -17,6 +17,8 @@
 
 	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
 	<a href="/"><button>Resync</button></a>
+	<a href="/update_user_name" target="_blank"><button>Change username</button></a>
+	<a href="/leave" target="_blank"><button>Leave</button></a>
 
 	<div style="margin: 20px;">
 
@@ -24,8 +26,8 @@
     <div class="post_box">
 	   <div class="post_box-header">
 	      <div class="post_box-options"><button class="option-btn">Reply</button></div>
-	      <div style="background: rgb(0, 97, 146) none repeat scroll 0% 0%; box-shadow: rgb(0, 97, 146) 0px 0px 0px 2px;" class="post_box-avatar">{{post.name[0]}}</div>
-		  <div class="name-header">{{post.name}}</div>
+	      <div style="background: rgb(0, 97, 146) none repeat scroll 0% 0%; box-shadow: rgb(0, 97, 146) 0px 0px 0px 2px;" class="post_box-avatar">{{post.user_name[0]}}</div>
+		  <div class="name-header">{{post.user_name}}</div>
 		  
 		  {% if post.type == "transaction" %}
 			 <div class="post_box-subtitle"> Posted at <i>{{post.datetime}}</i></div>
@@ -36,7 +38,7 @@
 	   </div>
 	   <div>
 	      <div class="post_box-body">
-	         <p>{{post.content}}</p>
+	         <p>{{post.content.text}}</p>
 	      </div>
 	   </div>
 	</div>

@@ -151,33 +151,22 @@ peers = set()
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     tx_data = request.get_json()
+    contents = []
 
-    # Se definen los nuevos atributos
-    tx_data["type"] = "transaction"
-    tx_data["name"] = tx_data.get("name") 
-    tx_data["IP"] = request.remote_addr  
+    if(tx_data.get('type') == 'inscription'):
+        contents = ['name', 'email']
 
-    if not tx_data.get("content"):
+    if(tx_data.get('type') == 'transaction'):
+        contents = ['text']
+
+    if not tx_data.get('user_name'):
         return "invalid transaction data", 404
 
-    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    blockchain.add_new_transaction(tx_data)
+    if (len(contents) > 0):
+        for cont in contents:
+            if not tx_data.get('content').get(cont):
+                return "invalid transaction data", 404
 
-    return "Success", 201
-
-
-@app.route('/new_inscription', methods=['POST'])
-def new_inscription():
-    tx_data = request.get_json()
-
-    tx_data["type"] = "inscription"
-    if not tx_data.get("name"):
-        return "invalid name", 404
-
-    tx_data['content'] = tx_data.get("name") + ' se ha inscrito.'
-    tx_data["IP"] = request.remote_addr
-
-    tx_data["datetime"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     blockchain.add_new_transaction(tx_data)
 
     return "Success", 201
@@ -342,6 +331,7 @@ def announce_new_block(block):
         requests.post(url,
                       data=json.dumps(block.__dict__, sort_keys=True),
                       headers=headers)
+
 
 # Uncomment this line if you want to specify the port number in the code
 #app.run(debug=True, port=8000)
