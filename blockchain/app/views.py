@@ -77,9 +77,24 @@ def inscription():
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
 
+    fetch_posts()
     user_name = request.form['user_name']
     name = request.form['name']
     email = request.form['email']
+    not_allowed = False
+
+    for post in posts:
+        if (post['user_name'] == user_name): 
+            us = post['user_name']
+            not_allowed = True
+
+    for post in reversed(posts):
+        if (post['type'] == 'update' and 'previous_name' in post['content'].keys()):
+            if (us == post['content']['previous_name']):
+                not_allowed = False
+
+    if not_allowed == True:
+        return "Este usuario ya se encuentra registrado", 404
 
     post_object = {
         'type': "inscription",
@@ -141,7 +156,7 @@ def submit_IP_update():
     user_name = request.form['user_name']
 
     try: 
-        for post in posts: 
+        for post in reversed(posts): 
             if (user_name == post['user_name']):
                 previous_ip = post['IP']
         
@@ -182,9 +197,11 @@ def update_user_name():
 def submit_user_name_update():
     user_name = request.form['user_name']
 
-    for post in posts: 
+    for post in reversed(posts): 
         if post['IP'] == request.remote_addr:
             previous_user_name = post['user_name']
+            if previous_user_name == user_name:
+                return "No puede cambiar su usuario por el mismo", 404
 
     new_ip = request.remote_addr
     post_object = {
@@ -217,7 +234,7 @@ def leave():
 @app.route('/submit_leave', methods=['POST'])
 def submit_leave():
 
-    for post in posts: 
+    for post in reversed(posts): 
         if post['IP'] == request.remote_addr:
             user_name = post['user_name']
 
