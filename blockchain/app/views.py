@@ -12,7 +12,6 @@ from app import app
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
 CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV =='DOCKER_ENVIRONMENT'  else "http://127.0.0.1:8000"
 
-
 posts = []
 def fetch_posts():
     """
@@ -41,6 +40,7 @@ def index():
     fetch_posts()
     actualIP = request.remote_addr
     leave = False
+    
     for post in posts: 
         if (post['type'] == 'leave' and post['IP'] == actualIP):
             leave = True 

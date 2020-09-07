@@ -1,0 +1,1 @@
+start ./ngrok/windows/ngrok.exe http %1
