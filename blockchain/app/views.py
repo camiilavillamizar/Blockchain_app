@@ -12,7 +12,6 @@ from app import app
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
 CONNECTED_NODE_ADDRESS = os.environ.get('CONNECTED_NODE_ADDRESS') if RUNTIME_ENV =='DOCKER_ENVIRONMENT'  else "http://127.0.0.1:8000"
 
-
 posts = []
 
 def fetch_posts():
@@ -48,7 +47,7 @@ def index():
                                  'content sharing',
                            posts = posts,
                            user_name = posts[post]['name'],
-                           node_address = CONNECTED_NODE_ADDRESS,
+                           node_address = '{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
     return redirect('/inscription')
 
