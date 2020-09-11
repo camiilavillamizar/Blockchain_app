@@ -1,20 +1,31 @@
+
 {% extends "base.html"%}
 
 {% block content %}
-
-    <center>
-	<form action="/submit-inscription" id="textform" method="post">
-		<textarea name="user_name" rows="1" cols="40" placeholder="Write your username"></textarea>
-		<textarea name="name" rows="1" cols="40" placeholder="Write your full name"></textarea>
-		<textarea name="email" rows="1" cols="40" placeholder="Write your email"></textarea>
-	    <br>
-	    <input type="submit" value="Post">
-	</form>
-    </center>
-    
+<main class="container p-4">
+    <h1 class="display-4 title text-center"> YourNet</h1>
+    <p class="lead text-center"> Your decentralized content sharing platform</p>
     <br>
-
-	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
-	<a href="/update_IP" target="_blank"><button>Already registered</button></a>
-	
+    <h3 class="text-center">Sign Up</h3>
+    <div class="row">
+            <div class="col-md-4 offset-md-4 my-auto">
+                <div class="card mt-2">
+                    <div class="card-header">
+                        <form action="/submit-inscription" id="textform" name ="textform" method="POST">
+                            <input type="text" name="name" placeholder="Name" class="form-control" autofocus>
+                            <input type="text" name="user_name" placeholder="Username" class="form-control">
+                            <input type="email" name="email" placeholder="Email" class="form-control">
+                            <input type="password" name="password" id="pwrd" class="form-control" placeholder="Password">
+                            <input type="password" name="repeat_password" id="r_pwrd" class="form-control" placeholder="Repeat password" >
+                            <br>
+                            <input type="submit" value="POST" class="btn btn-block btn-outline-primary">
+                        </form>
+                        <a href="{{node_address}}/mine" target="_blank"><button class="btn btn-block btn-primary mt-2">Request to mine</button></a>
+                        <br>
+                        <p class="text-center"> Already have an account? <a href="/login">Login</a></p>
+                    </div>
+                </div>
+            </div>
+    </div>
+</main>
 {% endblock %}

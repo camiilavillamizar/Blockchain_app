@@ -1,17 +1,23 @@
 {% extends "base.html"%}
 
 {% block content %}
-
-    <center>
-    <h4>Seguro quiere irse?</h4>
-	<form action="/submit_leave" id="textform" method="post">
-	    <br>
-	    <input type="submit" value="Post">
-	</form>
-    </center>
-    
-    <br>
-
-	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
-	
+    <main class="container p-4">
+        <h1 class="display-4 title text-center"> YourNet</h1>
+        <p class="lead text-center"> Your decentralized content sharing platform</p>
+        <br>
+        <h3 class="text-center">Are you sure you want to leave?</h3>
+        <div class="row">
+                <div class="col-md-4 offset-md-4 my-auto">
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <form action="/submit_leave" id="textform" name ="textform" method="POST">
+								<input type="submit" value="Yes" class="btn btn-outline-primary btn-block">
+							</form>
+							<br>
+                            <p class="text-center"><a href="/" class="text-secondary">No</a></p>
+                            <a href="{{node_address}}/mine" target="_blank"><button class="btn btn-block btn-primary mt-2">Request to mine</button></a>
+                    </div>
+                </div>
+            </div>
+    </main>
 {% endblock %}

@@ -33,8 +33,8 @@ def fetch_posts():
         posts = sorted(content, key=lambda k: k['datetime'],
                        reverse=True)
 
- 
-
+        
+@app.route('/index')
 @app.route('/')
 def index():
     fetch_posts()
@@ -52,7 +52,30 @@ def index():
                            user_name = post['user_name'], name = post['content']['name'],
                            node_address = CONNECTED_NODE_ADDRESS, readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
                 break
-    return redirect('/inscription')
+
+    return redirect('/login')
+
+@app.route('/index2')
+def index2():
+    fetch_posts()
+    actualIP = request.remote_addr
+    leave = False
+
+    for post in posts: 
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True 
+
+    for post in posts:
+        if (posts[post]['IP'] == actualIP): 
+            return render_template('index.html',
+                           title='YourNet: Decentralized '
+                                 'content sharing',
+                           posts = posts,
+                           user_name = post['user_name'],
+                           name = post['content']['name'],
+                           node_address = CONNECTED_NODE_ADDRESS,
+                           readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
+    return redirect('/login')
 
 
 @app.route('/inscription')
@@ -60,6 +83,7 @@ def inscription():
     fetch_posts()
     leave = False
     actualIP = request.remote_addr
+
 
     for post in posts: 
         if (post['type'] == 'leave' and post['IP'] == actualIP):
@@ -73,6 +97,26 @@ def inscription():
     return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
                            node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
+
+    for post in posts: 
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True 
+
+
+@app.route('/login')
+def login():
+   return render_template('login.html')
+=======
+    for post in posts: 
+        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
+            if( post['IP'] == request.remote_addr and leave == False):
+                return redirect('/')
+   
+    return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
+                           node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
     
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
@@ -203,6 +247,7 @@ def submit_user_name_update():
             if previous_user_name == user_name:
                 return "No puede cambiar su usuario por el mismo", 404
 
+
     new_ip = request.remote_addr
     post_object = {
         'type': 'update',
@@ -221,6 +266,7 @@ def submit_user_name_update():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/update_user_name')
+
 #-------------------------------------------
 #LEAVE
 @app.route('/leave')
@@ -255,3 +301,4 @@ def submit_leave():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/leave')
+
