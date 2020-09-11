@@ -9,7 +9,7 @@ services:
         links: 
             - reverseproxy_service
         environment:
-          - NGROK_AUTH=1ghdY71MEt7NamJaYRDSfSUC8oZ_UCvC7tbSA9Yksdr8i9Hq
+          #- NGROK_AUTH=1ghdY71MEt7NamJaYRDSfSUC8oZ_UCvC7tbSA9Yksdr8i9Hq
           - NGROK_REGION=us
           - NGROK_PORT=http://reverseproxy_service:80
           - NGROK_DEBUG=1
