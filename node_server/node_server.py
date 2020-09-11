@@ -33,7 +33,7 @@ class Block:
 
 class Blockchain:
     # difficulty of our PoW algorithm
-    difficulty = 4
+    difficulty = 2
 
     def __init__(self):
         self.unconfirmed_transactions = []
@@ -133,8 +133,7 @@ class Blockchain:
 
         new_block = Block(index=last_block.index + 1,
                           transactions=self.unconfirmed_transactions,
-                          datetime=datetime.now().strftime(
-                              "%Y/%m/%d %H:%M:%S"),
+                          datetime=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
                           previous_hash=last_block.hash)
 
         proof = self.proof_of_work(new_block)
