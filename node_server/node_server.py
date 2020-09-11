@@ -1,11 +1,18 @@
 from hashlib import sha256
 import json
-import time
-import sys
+from json import JSONEncoder
 from datetime import datetime
 
 from flask import Flask, request
 import requests
+import os
+import signal
+import pickle
+import time
+import sys
+from copy import copy
+
+from multiprocessing import Process, Queue
 
 
 class Block:
@@ -26,7 +33,7 @@ class Block:
 
 class Blockchain:
     # difficulty of our PoW algorithm
-    difficulty = 2
+    difficulty = 4
 
     def __init__(self):
         self.unconfirmed_transactions = []
@@ -131,15 +138,14 @@ class Blockchain:
                           previous_hash=last_block.hash)
 
         proof = self.proof_of_work(new_block)
-        self.add_block(new_block, proof)
+        # self.add_block(new_block, proof)
 
         self.unconfirmed_transactions = []
 
-        return True
+        return (new_block, proof)
 
 
 def create_app():
-
     app = Flask(__name__)
 
     # the node's copy of blockchain
@@ -148,6 +154,25 @@ def create_app():
 
     # the address to other participating members of the network
     peers = set()
+
+    # la fila para pasar lso resultados al proceso principal.
+    q = Queue()
+
+    # el proceso actual.
+    p = None
+
+    # exit function
+    def clean(*args):
+        print("cleaning up")
+        try:
+            p.terminate()
+        except AttributeError:
+            pass
+        except ConnectionError:
+            pass
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, clean)
 
     # endpoint to submit a new transaction. This will be used by
     # our application to add new data (posts) to the blockchain
@@ -196,23 +221,40 @@ def create_app():
                            "chain": chain_data,
                            "peers": list(peers)})
 
+    def minar_bloque(qu):
+        """ subproceso para minar bloques. """
+        pending = copy(blockchain.unconfirmed_transactions)
+        result = blockchain.mine()
+        if result:
+            qu.put(result)
+            msg = copy(result[0])
+            msg.hash = result[1]
+            msg.own = True
+            msg.pending_tx = pending
+            requests.post("{}add_block".format(request.host_url),
+                          headers={'Content-Type': "application/json"},
+                          data=json.dumps(msg.__dict__, sort_keys=True))
+
+    def create_proc():
+        return Process(target=minar_bloque, args=(q,))
+
     # endpoint to request the node to mine the unconfirmed
     # transactions (if any). We'll be using it to initiate
     # a command to mine from our application itself.
     @app.route('/mine', methods=['GET'])
     def mine_unconfirmed_transactions():
-        result = blockchain.mine()
-        if not result:
-            return "No transactions to mine"
+        nonlocal p, blockchain
+        chain_length = len(blockchain.chain)
+        consensus()
+        if chain_length == len(blockchain.chain):
+            p = create_proc()
+            p.start()
+            return "El bloque está siendo minado."
+
         else:
-            # Making sure we have the longest chain before announcing
-            # to the network
-            chain_length = len(blockchain.chain)
-            consensus()
-            if chain_length == len(blockchain.chain):
-                # announce the recently mined block to the network
-                announce_new_block(blockchain.last_block)
-            return "Block #{} is mined.".format(blockchain.last_block.index)
+            dump = requests.get('{}chain'.format(next(iter(peers))))
+            blockchain = create_chain_from_dump(dump.json()['chain'])
+            mine_unconfirmed_transactions()
 
     # endpoint to add new peers to the network.
     @app.route('/register_node', methods=['POST'])
@@ -318,6 +360,7 @@ def create_app():
     # and then added to the chain.
     @app.route('/add_block', methods=['POST'])
     def verify_and_add_block():
+        nonlocal p
         block_data = request.get_json()
         block = Block(block_data["index"],
                       block_data["transactions"],
@@ -331,6 +374,26 @@ def create_app():
         if not added:
             return "The block was discarded by the node", 400
 
+        # si es nuestro propio bloque, reenviarlo a los demás peers
+        # (y borrar las transacciones pendientes)
+        if block_data["own"]:
+            blockchain.unconfirmed_transactions = [
+                x for x in blockchain.unconfirmed_transactions
+                if x not in block_data["pending_tx"]]
+            fwd = copy(block)
+            fwd.hash = proof
+            fwd.own = False
+            announce_new_block(fwd)
+            return "New block has been mined.", 201
+
+        # cancel the mining operation and start a new one, if any
+        try:
+            os.kill(p.pid, signal.SIGKILL)
+            requests.get('{}mine'.format(request.host_url))
+        except OSError:
+            print("pid no corresponde a ningún proceso")
+        except AttributeError:
+            print("proceso no existe")
         return "Block added to the chain", 201
 
     # endpoint to query unconfirmed transactions

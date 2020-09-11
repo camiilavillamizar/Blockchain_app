@@ -1,17 +1,24 @@
 import os
+import re
 import signal
 import concurrent.futures
 import unittest
 import requests
 import json
+import subprocess
+import time
 
 from node_server import create_app
+unittest.TestLoader.sortTestMethodsUsing = None
 
 # aliases
+nodo = "http://localhost:"
 nodo1 = "http://localhost:8000"
 nodo2 = "http://localhost:8001"
 nodo3 = "http://localhost:8002"
+nodos = [8000, 8001, 8002]
 
+count = 0
 
 class BasicsTestCase(unittest.TestCase):
     def setUp(self):
@@ -47,29 +54,35 @@ class multiNodesTestCase(unittest.TestCase):
         dejar los puertos que usen libres. """
 
     def setUp(self):
-        self.maxDiff = None
+        global count
+        self.port1 = 8000 + count
+        count += 1
+        self.port2 = 8000 + count
+        count += 1
+        self.port3 = 8000 + count
+        count += 1
         self.node1 = create_app()
         self.node2 = create_app()
         self.node3 = create_app()
+
         self.pid1 = os.fork()
         if self.pid1 == 0:
-            self.node1.run(port=8000)
+            self.node1.run(port=8000 + str(self.port1))
 
         self.pid2 = os.fork()
         if self.pid2 == 0:
-            self.node2.run(port=8001)
+            self.node2.run(port=8000 + str(self.port2))
 
         self.pid3 = os.fork()
         if self.pid3 == 0:
-            self.node3.run(port=8002)
+            self.node3.run(port=8000 + str(self.port3))
 
     def tearDown(self):
         """ elimina los servidores """
         for pid in [self.pid1, self.pid2, self.pid3]:
             try:
-                os.kill(pid, signal.SIGKILL)
+                os.kill(pid, signal.SIGTERM)
             except OSError:
-                # looks pretty bad, but ¯\_(ツ)_/¯
                 pass
 
     # ### ### pruebas
@@ -77,54 +90,54 @@ class multiNodesTestCase(unittest.TestCase):
     def test_dos_nodos_diff(self):
         """ prueba que los nodos generados sean diferentes """
         requests.post(
-            'http://localhost:8000/new_transaction',
+            nodo + str(self.port1) + '/new_transaction',
             json={'content': 'contenido'}
         )
 
-        rs1 = requests.get('http://localhost:8000/pending_tx')
-        rs2 = requests.get('http://localhost:8001/pending_tx')
+        rs1 = requests.get(nodo + str(self.port1) + '/pending_tx')
+        rs2 = requests.get(nodo + str(self.port2) + '/pending_tx')
         self.assertNotEqual(rs1.content, rs2.content)
 
     # FIXME los nodos no realizan consenso cuando se minan en paralelo
-    # def test_consenso_paralelo(self):
-    #     """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
-    #     minarlo."""
-    #     # primero conectamos los nodos
-    #     requests.post("http://localhost:8001/register_with",
-    #                   json={'node_address': 'http://localhost:8000'})
+    def test_consenso_paralelo(self):
+        """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
+        minarlo."""
+        # primero conectamos los nodos
+        requests.post(nodo + str(self.port2) + "/register_with",
+                      json={'node_address': nodo + str(self.port1)})
 
-    #     def commentNmine(args):
-    #         print("agregando la transacción")
-    #         requests.post(
-    #             args["url"] + "/new_transaction",
-    #             json={'content': args["content"]}
-    #         )
-    #         print("minando la transacción")
-    #         requests.get(args["url"] + "/mine")
+        def commentNmine(args):
+            print("agregando la transacción")
+            requests.post(
+                args["url"] + "/new_transaction",
+                json={'content': args["content"]}
+            )
+            print("minando la transacción")
+            requests.get(args["url"] + "/mine")
 
-    #     # actualización paralela de los nodos.
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-    #         pool.map(commentNmine, [{"url": "http://localhost:8000",
-    #                                  "content": "contenido1"},
-    #                                 {"url": "http://localhost:8001",
-    #                                  "content": "contenido2"}])
+        # actualización paralela de los nodos.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            pool.map(commentNmine, [{"url": nodo + str(self.port1),
+                                     "content": "contenido1"},
+                                    {"url": nodo + str(self.port2),
+                                     "content": "contenido2"}])
 
-    #     # las cadenas deberían ser iguales entre los nodos
-    #     ch1 = json.loads(requests.get(
-    #         'http://localhost:8000/chain').content)["chain"]
-    #     print(ch1)
-    #     ch2 = json.loads(requests.get(
-    #         'http://localhost:8001/chain').content)["chain"]
-    #     print(ch2)
+        # las cadenas deberían ser iguales entre los nodos
+        ch1 = json.loads(requests.get(
+            nodo + str(self.port1) + '/chain').content)["chain"]
+        print(ch1)
+        ch2 = json.loads(requests.get(
+            nodo + str(self.port2) + '/chain').content)["chain"]
+        print(ch2)
 
-    #     self.assertEqual(ch1, ch2)
+        self.assertEqual(ch1, ch2)
 
     def test_consenso_seq(self):
         """prueba que los nodos se pongan de acuerdo tras recibir un mensaje y
         minarlo."""
         # primero conectamos los nodos
-        requests.post(nodo2 + "/register_with",
-                      json={'node_address': nodo1})
+        requests.post(nodo + str(self.port2) + "/register_with",
+                      json={'node_address': nodo + str(self.port1)})
 
         def commentNmine(args):
             requests.post(
@@ -134,14 +147,14 @@ class multiNodesTestCase(unittest.TestCase):
             requests.get(args["url"] + "/mine")
 
         # se ejecuta de forma secuencial
-        commentNmine({"url": nodo1, "content": "contenido1"})
-        commentNmine({"url": nodo2, "content": "contenido2"})
+        commentNmine({"url": nodo + str(self.port1), "content": "contenido1"})
+        commentNmine({"url": nodo + str(self.port2), "content": "contenido2"})
 
         # las cadenas deberían ser iguales entre los nodos
         ch1 = json.loads(requests.get(
-            nodo1 + '/chain').content)["chain"]
+            nodo + str(self.port1) + '/chain').content)["chain"]
         ch2 = json.loads(requests.get(
-            nodo2 + '/chain').content)["chain"]
+            nodo + str(self.port2) + '/chain').content)["chain"]
 
         self.assertEqual(ch1, ch2)
 
@@ -153,22 +166,22 @@ class multiNodesTestCase(unittest.TestCase):
             return json.loads(
                 requests.get(addr + "/chain").content)["peers"]
 
-        requests.post(nodo2 + "/register_with",
-                      json={'node_address': nodo1})
+        requests.post(nodo + str(self.port2) + "/register_with",
+                      json={'node_address': nodo + str(self.port1)})
 
-        self.assertCountEqual(checkPeers(nodo1), [nodo2 + "/"])
-        self.assertCountEqual(checkPeers(nodo2), [nodo1 + "/"])
-        self.assertCountEqual(checkPeers(nodo3), [])
+        self.assertCountEqual(checkPeers(nodo + str(self.port1)), [nodo + str(self.port2) + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port2)), [nodo + str(self.port1) + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port3)), [])
 
-        requests.post(nodo3 + "/register_with",
-                      json={'node_address': nodo1})
+        requests.post(nodo + str(self.port3) + "/register_with",
+                      json={'node_address': nodo + str(self.port1)})
 
-        self.assertCountEqual(checkPeers(nodo1), [nodo2 + "/", nodo3 + "/"])
-        self.assertCountEqual(checkPeers(nodo2), [nodo1 + "/", nodo3 + "/"])
-        self.assertCountEqual(checkPeers(nodo3), [nodo1 + "/", nodo2 + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port1)), [nodo + str(self.port2) + "/", nodo + str(self.port3) + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port2)), [nodo + str(self.port1) + "/", nodo + str(self.port3) + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port3)), [nodo + str(self.port1) + "/", nodo + str(self.port2) + "/"])
 
         # prueba eliminar nodos
-        requests.get(nodo2 + "/leave")
+        requests.get(nodo + str(self.port2) + "/leave")
 
-        self.assertCountEqual(checkPeers(nodo1), [nodo3 + "/"])
-        self.assertCountEqual(checkPeers(nodo3), [nodo1 + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port1)), [nodo + str(self.port3) + "/"])
+        self.assertCountEqual(checkPeers(nodo + str(self.port3)), [nodo + str(self.port1) + "/"])
