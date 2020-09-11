@@ -75,10 +75,3 @@
  # example ./start_tunnel_mac.sh 8000
  ./start_tunnel_mac.sh PORT #replace PORT by the PORT NODE
 ```
-
-## running the test suite
-
-``` sh
-# move to the root folder and
-python -m unittest
-```
