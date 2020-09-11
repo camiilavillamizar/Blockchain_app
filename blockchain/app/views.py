@@ -33,6 +33,7 @@ def fetch_posts():
         posts = sorted(content, key=lambda k: k['datetime'],
                        reverse=True)
 
+        
 @app.route('/index')
 @app.route('/')
 def index():
@@ -51,6 +52,7 @@ def index():
                            user_name = post['user_name'], name = post['content']['name'],
                            node_address = CONNECTED_NODE_ADDRESS, readable_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")) 
                 break
+
     return redirect('/login')
 
 @app.route('/index2')
@@ -82,6 +84,7 @@ def inscription():
     leave = False
     actualIP = request.remote_addr
 
+
     for post in posts: 
         if (post['type'] == 'leave' and post['IP'] == actualIP):
             leave = True 
@@ -96,9 +99,24 @@ def inscription():
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
+    for post in posts: 
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True 
+
+
 @app.route('/login')
 def login():
    return render_template('login.html')
+=======
+    for post in posts: 
+        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
+            if( post['IP'] == request.remote_addr and leave == False):
+                return redirect('/')
+   
+    return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
+                           node_address='{}node'.format(request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
     
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
@@ -228,9 +246,7 @@ def submit_user_name_update():
             previous_user_name = post['user_name']
             if previous_user_name == user_name:
                 return "No puede cambiar su usuario por el mismo", 404
-            else:
-                if user_name == "None":
-                    pass 
+
 
     new_ip = request.remote_addr
     post_object = {
@@ -250,8 +266,6 @@ def submit_user_name_update():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/update_user_name')
-
-
 
 #-------------------------------------------
 #LEAVE
@@ -287,3 +301,4 @@ def submit_leave():
                   headers={'Content-type': 'application/json'})
 
     return redirect('/leave')
+

@@ -1,0 +1,18 @@
+{% extends "base.html"%}
+
+{% block content %}
+
+    <center>
+    <h4>Digite el nombre con el cual se encuentra registrado</h4>
+	<form action="/submit_IP_update" id="textform" method="post">
+	    <textarea name="user_name" rows="4" cols="50" placeholder="Write your full name"></textarea>
+	    <br>
+	    <input type="submit" value="Post">
+	</form>
+    </center>
+    
+    <br>
+
+	<a href="{{node_address}}/mine" target="_blank"><button>Request to mine</button></a>
+	
+{% endblock %}
