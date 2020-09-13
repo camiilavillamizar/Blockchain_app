@@ -40,19 +40,27 @@ def index():
     fetch_posts()
     actualIP = request.remote_addr
     leave = False
-
+    update_name = False
+    
     for post in posts:
         if (post['type'] == 'leave' and post['IP'] == actualIP):
             leave = True
 
     for post in posts:
+        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+            update_name = True
+            name = post['content']['name']
+
+    for post in posts:
         if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
             if (post['IP'] == actualIP and leave == False):
+                if update_name != True: 
+                    name = post['content']['name']
                 return render_template('index.html',
                                        title=TITLE,
                                        posts=posts,
                                        user_name=post['user_name'],
-                                       name=post['content']['name'],
+                                       name=name,
                                        node_address=Config.connected_node_address(
                                            request),
                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
@@ -157,6 +165,11 @@ def submit_textarea_i():
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/')
 
@@ -185,6 +198,10 @@ def submit_textarea_t(user_name):
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/')
 
@@ -236,43 +253,49 @@ def submit_IP_update():
 # UPDATE NAME
 
 
-@app.route('/update_user_name')
-def update_user_name():
-    return render_template('update_user_name.html',
+@app.route('/update_name')
+def update_name():
+    return render_template('update_name.html',
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
-@app.route('/submit_user_name_update', methods=['POST'])
-def submit_user_name_update():
-    user_name = request.form['user_name']
+@app.route('/submit_name_update', methods=['POST'])
+def submit_name_update():
+    name = request.form['name']
 
+    print(posts)
     for post in reversed(posts):
-        if post['IP'] == request.remote_addr:
-            previous_user_name = post['user_name']
-            if previous_user_name == user_name:
-                return "No puede cambiar su usuario por el mismo", 404
+        if post['IP'] == request.remote_addr and post['content']['name'] is not None:
+            print(post)
+            previous_name = post['content']['name']
+            user_name = post['user_name']
 
-    new_ip = request.remote_addr
     post_object = {
         'type': 'update',
         'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': user_name + ' ha cambiado su usuario de ' + previous_user_name + ' a ' + user_name,
-            'previous_user_name': previous_user_name,
+            'text': user_name + ' ha cambiado su nombre de ' + previous_name + ' a ' + name,
+            'previous_name': previous_name,
+            'name': name
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
-
+    #ACTUALIZAR EN LA DB QUE SE CAMBIÓ EL NOMBRE 
     new_tx_address = "{}/new_transaction".format(
         Config.connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/update_user_name')
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
+
+    return redirect('/')
 
 # -------------------------------------------
 # LEAVE
@@ -310,5 +333,9 @@ def submit_leave():
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/leave')

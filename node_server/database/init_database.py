@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS "content" (
 	"text"	TEXT,
 	"name"	TEXT,
 	"email"	TEXT,
+	"previous_name" TEXT,
+	"previous_ip" TEXT,
 	"id_transaction"	INTEGER NOT NULL,
 	FOREIGN KEY("id_transaction") REFERENCES "transactions"("id")
 );
