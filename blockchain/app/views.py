@@ -1,17 +1,13 @@
 from datetime import datetime
 import json
-import os
 
 import requests
 from flask import render_template, redirect, request
 
 from app import app
+import Config
 
-# The node with which our application interacts, there can be multiple
-# such nodes as well.
-RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
-CONNECTED_NODE_ADDRESS = os.environ.get(
-    'CONNECTED_NODE_ADDRESS') if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else "http://127.0.0.1:8000"
+TITLE = 'YourNet: Decentralized ' 'content sharing'
 
 posts = []
 
@@ -21,7 +17,8 @@ def fetch_posts():
     Function to fetch the chain from a blockchain node, parse the
     data and store it locally.
     """
-    get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
+    get_chain_address = "{}/chain".format(
+        Config.connected_node_address(request))
     response = requests.get(get_chain_address)
     if response.status_code == 200:
         content = []
@@ -51,9 +48,14 @@ def index():
     for post in posts:
         if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
             if (post['IP'] == actualIP and leave == False):
-                return render_template('index.html', title='YourNet: Decentralized ' 'content sharing', posts=posts,
-                                       user_name=post['user_name'], name=post['content']['name'],
-                                       node_address=CONNECTED_NODE_ADDRESS, readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                return render_template('index.html',
+                                       title=TITLE,
+                                       posts=posts,
+                                       user_name=post['user_name'],
+                                       name=post['content']['name'],
+                                       node_address=Config.connected_node_address(
+                                           request),
+                                       readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
                 break
 
     return redirect('/login')
@@ -72,12 +74,12 @@ def index2():
     for post in posts:
         if (posts[post]['IP'] == actualIP):
             return render_template('index.html',
-                                   title='YourNet: Decentralized '
-                                   'content sharing',
+                                   title=TITLE,
                                    posts=posts,
                                    user_name=post['user_name'],
                                    name=post['content']['name'],
-                                   node_address=CONNECTED_NODE_ADDRESS,
+                                   node_address=Config.connected_node_address(
+                                       request),
                                    readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
     return redirect('/login')
 
@@ -97,14 +99,10 @@ def inscription():
             if(post['IP'] == request.remote_addr and leave == False):
                 return redirect('/')
 
-    return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
-                           node_address='{}node'.format(
-                               request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
+    return render_template('inscription.html',
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
 
 
 @app.route('/login')
@@ -114,10 +112,10 @@ def login():
             if(post['IP'] == request.remote_addr and leave == False):
                 return redirect('/')
 
-    return render_template('inscription.html', title='YourNet: Decentralized ' 'content sharing',
-                            node_address='{}node'.format(
-                                request.url_root) if RUNTIME_ENV == 'DOCKER_ENVIRONMENT' else CONNECTED_NODE_ADDRESS,
-                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+    return render_template('login.html',
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
 @app.route('/submit-inscription', methods=['POST'])
@@ -154,7 +152,8 @@ def submit_textarea_i():
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
-    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    new_tx_address = "{}/new_transaction".format(
+        Config.connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
@@ -180,7 +179,8 @@ def submit_textarea_t(user_name):
     }
 
     # Submit a transaction
-    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    new_tx_address = "{}/new_transaction".format(
+        Config.connected_node_address(request))
 
     requests.post(new_tx_address,
                   json=post_object,
@@ -194,9 +194,8 @@ def submit_textarea_t(user_name):
 @app.route('/update_IP')
 def update_IP():
     return render_template('update_ip.html',
-                           title='YourNet: Decentralized '
-                                 'content sharing',
-                           node_address=CONNECTED_NODE_ADDRESS,
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -224,9 +223,10 @@ def submit_IP_update():
         """
         Se debe de agregar el nodo con ip 'IP' y eliminar el nodo previous_ip.
         """
-        new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+        new_tx_address = "{}/new_transaction".format(
+            Config.connected_node_address(request))
         requests.post(new_tx_address,
-                      json= post_object,
+                      json=post_object,
                       headers={'Content-type': 'application/json'})
 
         return redirect('/update_IP')
@@ -239,9 +239,8 @@ def submit_IP_update():
 @app.route('/update_user_name')
 def update_user_name():
     return render_template('update_user_name.html',
-                           title='YourNet: Decentralized '
-                                 'content sharing',
-                           node_address=CONNECTED_NODE_ADDRESS,
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -267,7 +266,8 @@ def submit_user_name_update():
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
-    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    new_tx_address = "{}/new_transaction".format(
+        Config.connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
@@ -283,7 +283,7 @@ def leave():
     return render_template('leave.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
-                           node_address=CONNECTED_NODE_ADDRESS,
+                           node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -305,7 +305,8 @@ def submit_leave():
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
 
-    new_tx_address = "{}/new_transaction".format(CONNECTED_NODE_ADDRESS)
+    new_tx_address = "{}/new_transaction".format(
+        Config.connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
