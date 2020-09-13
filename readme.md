@@ -22,6 +22,15 @@
 
 ### How to start the frontend application
 
+#### Env Variables
+
+```dotenv
+flask_port=5000
+CONNECTED_NODE_ADDRESS=http://127.0.0.1:8000
+RUNTIME_ENV=LOCAL_ENVIRONMENT
+```
+
+#### Start FrontEnd
 ``` sh
     cd ./blockchain
     pip install -r requirements.txt
@@ -35,6 +44,8 @@
 ``` sh
     cd ./node_server
     pip install -r requirements.txt
+    #Initialice database
+    python ./database/init_database.py
 ```
 
 #### Windows
