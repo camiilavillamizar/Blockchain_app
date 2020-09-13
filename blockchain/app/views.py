@@ -38,10 +38,25 @@ def fetch_posts():
 @app.route('/')
 def index():
     fetch_posts()
+    return redirect('/login')
+
+@app.route('/login')
+def login():
+    return render_template('login.html',
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
+
+@app.route('/check_login', methods=['POST'])
+def check_login():
+
+    print('hola')
+    user_name = request.form['user_name']
     actualIP = request.remote_addr
     leave = False
     update_name = False
-    
+
     for post in posts:
         if (post['type'] == 'leave' and post['IP'] == actualIP):
             leave = True
@@ -52,79 +67,31 @@ def index():
             name = post['content']['name']
 
     for post in posts:
-        if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
-            if (post['IP'] == actualIP and leave == False):
-                if update_name != True: 
-                    name = post['content']['name']
-                return render_template('index.html',
-                                       title=TITLE,
-                                       posts=posts,
-                                       user_name=post['user_name'],
-                                       name=name,
-                                       node_address=Config.connected_node_address(
-                                           request),
-                                       readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-                break
+        if user_name == post['user_name']:
+            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+                if (post['IP'] == actualIP and leave == False):
+                    if update_name != True: 
+                        name = post['content']['name']
+                    print('hola')
+                    return render_template('index.html',
+                                        title=TITLE,
+                                        posts=posts,
+                                        user_name=post['user_name'],
+                                        name=name,
+                                        node_address=Config.connected_node_address(
+                                            request),
+                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                    break
 
     return redirect('/login')
-
-
-@app.route('/index2')
-def index2():
-    fetch_posts()
-    actualIP = request.remote_addr
-    leave = False
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if (posts[post]['IP'] == actualIP):
-            return render_template('index.html',
-                                   title=TITLE,
-                                   posts=posts,
-                                   user_name=post['user_name'],
-                                   name=post['content']['name'],
-                                   node_address=Config.connected_node_address(
-                                       request),
-                                   readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-    return redirect('/login')
-
 
 @app.route('/inscription')
 def inscription():
     fetch_posts()
-    leave = False
-    actualIP = request.remote_addr
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
-            if(post['IP'] == request.remote_addr and leave == False):
-                return redirect('/')
-
     return render_template('inscription.html',
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
-
-@app.route('/login')
-def login():
-    for post in posts:
-        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
-            if(post['IP'] == request.remote_addr and leave == False):
-                return redirect('/')
-
-    return render_template('login.html',
-                           title=TITLE,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
 
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
@@ -137,16 +104,7 @@ def submit_textarea_i():
 
     for post in posts:
         if (post['user_name'] == user_name):
-            us = post['user_name']
-            not_allowed = True
-
-    for post in reversed(posts):
-        if (post['type'] == 'update' and 'previous_name' in post['content'].keys()):
-            if (us == post['content']['previous_name']):
-                not_allowed = False
-
-    if not_allowed == True:
-        return "Este usuario ya se encuentra registrado", 404
+            return "Este usuario ya se encuentra registrado", 404
 
     post_object = {
         'type': "inscription",
@@ -265,10 +223,8 @@ def update_name():
 def submit_name_update():
     name = request.form['name']
 
-    print(posts)
     for post in reversed(posts):
         if post['IP'] == request.remote_addr and post['content']['name'] is not None:
-            print(post)
             previous_name = post['content']['name']
             user_name = post['user_name']
 
