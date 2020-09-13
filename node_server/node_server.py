@@ -125,14 +125,8 @@ def create_chain_from_dump(chain_dump):
 # and then added to the chain.
 @app.route('/add_block', methods=['POST'])
 def verify_and_add_block():
-    block_data = request.get_json()
-    block = Block(block_data["index"],
-                  block_data["transactions"],
-                  block_data["datetime"],
-                  block_data["previous_hash"],
-                  block_data["nonce"])
-
-    proof = block_data['hash']
+    block = Block.from_json(request.get_json())
+    proof = block.hash
     added = blockchain.add_block(block, proof)
 
     if not added:
