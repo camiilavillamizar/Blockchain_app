@@ -9,7 +9,7 @@ load_dotenv(dotenv_path)
 RUNTIME_ENV = os.environ.get('RUNTIME_ENV')
 
 def connected_node_address( request):
-    if request is not None:
+    if request is not None and RUNTIME_ENV == 'DOCKER_ENVIRONMENT':
         return '{}node'.format(request.url_root)
     else:
         return os.environ.get('CONNECTED_NODE_ADDRESS')
