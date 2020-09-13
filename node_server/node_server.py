@@ -1,7 +1,6 @@
 from models.Blockchain import Blockchain
 from models.Blockchain.Block import Block
 from models.Blockchain.Block.Transaction import Transaction
-from helpers.decorator import convert_input_to
 from flask import Flask, request
 import jsons
 import time
