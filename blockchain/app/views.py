@@ -145,7 +145,7 @@ def submit_textarea_i():
         'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': user_name + ' se ha inscrito.',
+            'text': '{0} se ha inscrito.'.format(user_name),
             'name': name,
             'email': email
         },
