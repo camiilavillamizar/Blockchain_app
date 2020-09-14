@@ -202,6 +202,10 @@ def submit_IP_update():
         requests.post(new_tx_address,
                       json=post_object,
                       headers={'Content-type': 'application/json'})
+        new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
         return redirect('/update_IP')
     except:
