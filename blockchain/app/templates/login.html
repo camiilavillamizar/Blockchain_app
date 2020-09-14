@@ -13,20 +13,16 @@
                 <div class="col-md-4 offset-md-4 my-auto">
                     <div class="card mt-2">
                         <div class="card-header">
-                            <form action="/check_login" id="textform" name ="textform" method="POST">
-                                <input type="text" name="name" placeholder="name" class="form-control" autofocus>
+                            <form action="/check_login" id="textform" name ="textform" method="post">
                                 <input type="text" name="user_name" placeholder="Username" class="form-control">
                                 <input type="password" name="password" id="pwrd" class="form-control" placeholder="Password" >
                                 <br>
-                                <input type="submit" value="POST" class="btn btn-block btn-outline-primary">
+                                <input type="submit" value="Post" class="btn btn-block btn-outline-primary">
                                 <br>        
                             </form>
-                            
-                            <a href="{{node_address}}/mine" target="_blank"><button class="btn btn-block btn-primary mt-2">Request to mine</button></a>
 
                             <br>
                             <div class="col-md-4 offset-md-4 my-auto">
-                                <a href="/index"> <button class="btn btn-primary">Login</button></a>
                             </div>
                             <br>
                             <p class="text-center">Don't have an account? <a href="/inscription" class="text-secondary">Sign up</a></p>

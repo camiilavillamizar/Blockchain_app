@@ -38,85 +38,68 @@ def fetch_posts():
 @app.route('/')
 def index():
     fetch_posts()
-    actualIP = request.remote_addr
-    leave = False
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
-            if (post['IP'] == actualIP and leave == False):
-                return render_template('index.html',
-                                       title=TITLE,
-                                       posts=posts,
-                                       user_name=post['user_name'],
-                                       name=post['content']['name'],
-                                       node_address=Config.connected_node_address(
-                                           request),
-                                       readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-                break
-
     return redirect('/login')
-
-
-@app.route('/index2')
-def index2():
-    fetch_posts()
-    actualIP = request.remote_addr
-    leave = False
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if (posts[post]['IP'] == actualIP):
-            return render_template('index.html',
-                                   title=TITLE,
-                                   posts=posts,
-                                   user_name=post['user_name'],
-                                   name=post['content']['name'],
-                                   node_address=Config.connected_node_address(
-                                       request),
-                                   readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-    return redirect('/login')
-
-
-@app.route('/inscription')
-def inscription():
-    fetch_posts()
-    leave = False
-    actualIP = request.remote_addr
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
-            if(post['IP'] == request.remote_addr and leave == False):
-                return redirect('/')
-
-    return render_template('inscription.html',
-                           title=TITLE,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
 
 @app.route('/login')
 def login():
-    for post in posts:
-        if post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys()):
-            if(post['IP'] == request.remote_addr and leave == False):
-                return redirect('/')
-
     return render_template('login.html',
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
+
+@app.route('/check_login', methods=['POST'])
+def check_login():
+
+    print('hola')
+    user_name = request.form['user_name']
+    actualIP = request.remote_addr
+    leave = False
+    update_name = False
+
+    for post in posts:
+        if (post['type'] == 'leave' and post['IP'] == actualIP):
+            leave = True
+
+    for post in posts:
+        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+            update_name = True
+            name = post['content']['name']
+
+    for post in posts:
+        if user_name == post['user_name']:
+            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+                if (post['IP'] == actualIP and leave == False):
+                    if update_name != True: 
+                        name = post['content']['name']
+                    print('hola')
+                    return render_template('index.html',
+                                        title=TITLE,
+                                        posts=posts,
+                                        user_name=post['user_name'],
+                                        name=name,
+                                        node_address=Config.connected_node_address(
+                                            request),
+                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                    break
+                else:
+                    #El usuario si existe pero la Ip no coincide
+                    return render_template('update_ip.html',
+                           title=TITLE,
+                           user_name=user_name,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
+
+    return redirect('/login')
+
+@app.route('/inscription')
+def inscription():
+    fetch_posts()
+    return render_template('inscription.html',
+                           title=TITLE,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 @app.route('/submit-inscription', methods=['POST'])
 def submit_textarea_i():
@@ -129,16 +112,7 @@ def submit_textarea_i():
 
     for post in posts:
         if (post['user_name'] == user_name):
-            us = post['user_name']
-            not_allowed = True
-
-    for post in reversed(posts):
-        if (post['type'] == 'update' and 'previous_name' in post['content'].keys()):
-            if (us == post['content']['previous_name']):
-                not_allowed = False
-
-    if not_allowed == True:
-        return "Este usuario ya se encuentra registrado", 404
+            return "Este usuario ya se encuentra registrado", 404
 
     post_object = {
         'type': "inscription",
@@ -157,6 +131,11 @@ def submit_textarea_i():
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/')
 
@@ -185,19 +164,14 @@ def submit_textarea_t(user_name):
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/')
 
 # UPDATE IP
-
-
-@app.route('/update_IP')
-def update_IP():
-    return render_template('update_ip.html',
-                           title=TITLE,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
 
 @app.route('/submit_IP_update', methods=['POST'])
 def submit_IP_update():
@@ -228,6 +202,10 @@ def submit_IP_update():
         requests.post(new_tx_address,
                       json=post_object,
                       headers={'Content-type': 'application/json'})
+        new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
         return redirect('/update_IP')
     except:
@@ -236,43 +214,47 @@ def submit_IP_update():
 # UPDATE NAME
 
 
-@app.route('/update_user_name')
-def update_user_name():
-    return render_template('update_user_name.html',
+@app.route('/update_name')
+def update_name():
+    return render_template('update_name.html',
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
-@app.route('/submit_user_name_update', methods=['POST'])
-def submit_user_name_update():
-    user_name = request.form['user_name']
+@app.route('/submit_name_update', methods=['POST'])
+def submit_name_update():
+    name = request.form['name']
 
     for post in reversed(posts):
-        if post['IP'] == request.remote_addr:
-            previous_user_name = post['user_name']
-            if previous_user_name == user_name:
-                return "No puede cambiar su usuario por el mismo", 404
+        if post['IP'] == request.remote_addr and post['content']['name'] is not None:
+            previous_name = post['content']['name']
+            user_name = post['user_name']
 
-    new_ip = request.remote_addr
     post_object = {
         'type': 'update',
         'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': user_name + ' ha cambiado su usuario de ' + previous_user_name + ' a ' + user_name,
-            'previous_user_name': previous_user_name,
+            'text': user_name + ' ha cambiado su nombre de ' + previous_name + ' a ' + name,
+            'previous_name': previous_name,
+            'name': name
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
-
+    #ACTUALIZAR EN LA DB QUE SE CAMBIÓ EL NOMBRE 
     new_tx_address = "{}/new_transaction".format(
         Config.connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
 
-    return redirect('/update_user_name')
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
+
+    return redirect('/')
 
 # -------------------------------------------
 # LEAVE
@@ -310,5 +292,9 @@ def submit_leave():
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
+    new_tx_to_mine = "{}/mine".format(
+        Config.connected_node_address(request))
+
+    requests.get(new_tx_to_mine)
 
     return redirect('/leave')

@@ -21,7 +21,7 @@
               <a class="nav-link" href="/user.html">{{user_name}}</a>
             </li>
             <li class="nav-item active">
-              <a href="/leave"> <button class="btn btn-outline-secondary">Log out</button></a>
+              <a href="/leave"> <button class="btn btn-outline-secondary">Leave</button></a>
             </li>
           </ul>
         </div>
@@ -35,7 +35,7 @@
 
         <!-- Entries Column -->
         <div class="col-md-8 mt-4">
-            <h1 class="my-4 display-4">Welcome {{user_name}}</h1>
+            <h1 class="my-4 display-4">Welcome {{name}}</h1>
             
             <!-- Post Form -->
             <div class="card mb-4">
@@ -46,7 +46,7 @@
                     <input type="submit" value="Post" class="btn btn-primary btn-block">
                   </form>
                   <br>
-                  <a href="{{node_address}}/mine" target="_blank"><button class="btn btn-outline-primary">Request to mine</button></a>
+                  <a href="/update_name" target="_blank"><button>Change username</button></a>
               </div>
 
             </div>
@@ -56,7 +56,7 @@
           <!-- Post -->
           <div class="card mb-4">
             <div class="card-body">
-              <h2 class="card-title">{{post.content.name}}</h2>
+              <h2 class="card-title">{{post.user_name}}</h2>
               <p>{{post.content}}</p>
               <a href="#" class="btn btn-primary">Read More →</a>
             </div>
