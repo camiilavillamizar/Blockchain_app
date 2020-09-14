@@ -82,6 +82,14 @@ def check_login():
                                             request),
                                         readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
                     break
+                else:
+                    #El usuario si existe pero la Ip no coincide
+                    return render_template('update_ip.html',
+                           title=TITLE,
+                           user_name=user_name,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
 
     return redirect('/login')
 
@@ -164,15 +172,6 @@ def submit_textarea_t(user_name):
     return redirect('/')
 
 # UPDATE IP
-
-
-@app.route('/update_IP')
-def update_IP():
-    return render_template('update_ip.html',
-                           title=TITLE,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
 
 @app.route('/submit_IP_update', methods=['POST'])
 def submit_IP_update():
