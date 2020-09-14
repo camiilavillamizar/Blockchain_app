@@ -318,7 +318,7 @@ def create_app():
                 continue  # skip genesis block
             block = Block(block_data["index"],
                           block_data["transactions"],
-                          block_data["timestamp"],
+                          block_data["datetime"],
                           block_data["previous_hash"],
                           block_data["nonce"])
             proof = block_data['hash']
