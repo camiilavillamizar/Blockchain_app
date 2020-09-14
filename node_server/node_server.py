@@ -33,7 +33,7 @@ class Block:
 
 class Blockchain:
     # difficulty of our PoW algorithm
-    difficulty = 2
+    difficulty = 4
 
     def __init__(self):
         self.unconfirmed_transactions = []
@@ -154,7 +154,7 @@ def create_app():
     # the address to other participating members of the network
     peers = set()
 
-    # la fila para pasar lso resultados al proceso principal.
+    # la fila para pasar los resultados al proceso principal.
     q = Queue()
 
     # el proceso actual.
@@ -436,6 +436,23 @@ def create_app():
             requests.post(url,
                           data=json.dumps(block.__dict__, sort_keys=True),
                           headers=headers)
+
+    @app.route('/debug_clear')
+    def clear_data():
+        """ IMPORTANT
+
+        don't expose this endpoint to the end-user. It is meant for debugging
+        purposes only.
+
+        reset the state of the node. """
+        nonlocal blockchain, peers, q, p
+        blockchain = Blockchain()
+        blockchain.create_genesis_block()
+        peers = set()
+        q = Queue()
+        p = None
+
+        return "state reset"
 
     return app
 
