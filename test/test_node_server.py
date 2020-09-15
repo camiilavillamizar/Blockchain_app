@@ -2,10 +2,7 @@ import unittest
 from node_server import create_app
 from multiprocessing import Process
 import requests
-import time
 import concurrent.futures
-import sys
-import os
 
 # constants
 nodelist = ["8000", "8001", "8002"]
@@ -13,46 +10,34 @@ loch = "http://localhost:"
 
 
 class multiNodeTestCase(unittest.TestCase):
+    # show all the diffs between compared values
     maxDiff = None
 
-    @classmethod
-    def setUpClass(cls):
+    # @classmethod
+    def setUp(self):
         """ create servers """
-        cls.nodes = []
-        cls.servers = []
+        self.nodes = []
+        self.servers = []
         for node in nodelist:
-            cls.nodes.append(create_app())
+            self.nodes.append(create_app())
 
         # bring them up online
-        for idx, node in enumerate(cls.nodes):
+        for idx, node in enumerate(self.nodes):
             p = Process(target=node.run, kwargs={"port": nodelist[idx]})
-            cls.servers.append(p)
+            self.servers.append(p)
             p.start()
-            print("mi server process' id is ", p.pid)
 
-    @classmethod
-    def tearDownClass(cls):
+    # @classmethod
+    def tearDown(self):
         """ shut down servers """
         for port in nodelist:
             requests.get(loch + port + "/leave")
 
         # also, clean up the processes
-        for server in cls.servers:
+        for server in self.servers:
             server.terminate()
-            server.join(2)
+            server.join()
             server.close()
-
-    def setUp(self):
-        """ initial test config. Should be none """
-        pass
-
-    def tearDown(self):
-        """ erase all server state """
-        for port in nodelist:
-            requests.get(loch + port + "/debug_clear")
-        # if you remove this, the test process will inexplicably become
-        # orphaned, causing a second test run to fail (because of ports
-        # still being busy).
 
     # ## ## tests
 
