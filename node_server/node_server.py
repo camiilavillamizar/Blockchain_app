@@ -25,7 +25,7 @@ class Block:
 
 class Blockchain:
     # difficulty of our PoW algorithm
-    difficulty = 4
+    difficulty = 2
 
     def __init__(self):
         self.unconfirmed_transactions = []
@@ -200,14 +200,11 @@ def create_app():
     def mine_unconfirmed_transactions():
         nonlocal blockchain
         chain_length = len(blockchain.chain)
-        print("obteniendo la cadena más larga.")
         consensus()
         if chain_length == len(blockchain.chain):
-            print("minando.")
             pending = copy(blockchain.unconfirmed_transactions)
             result = blockchain.mine()
             if result:
-                print("agregando el bloque a la cadena.")
                 msg = copy(result[0])
                 msg.hash = result[1]
                 msg.own = True
@@ -347,10 +344,8 @@ def create_app():
 
         # si es nuestro propio bloque...
         if block_data["own"]:
-            print("agregando nuestro propio bloque.")
             # ...y fue añadido, reenviar a los demás.
             if added:
-                print("enviando a los demás nodos.")
                 # se eliminan las transacciones que fueron minadas
                 blockchain.unconfirmed_transactions = [
                     x for x in blockchain.unconfirmed_transactions
@@ -359,10 +354,9 @@ def create_app():
                 fwd.hash = proof
                 fwd.own = False
                 announce_new_block(fwd)
-                return "New block has been mined."
+                return "New block has been mined.", 201
             # ...de lo contrario, volver a minar.
             else:
-                print("volviendo a minar.")
                 for tx in block_data["pending_tx"]:
                     blockchain.unconfirmed_transactions.insert(0, tx)
                 requests.get("{}mine".format(request.host_url))
