@@ -221,7 +221,7 @@ def submit_IP_update():
 
         requests.get(new_tx_to_mine)
 
-        return redirect('/update_IP')
+        return redirect('/login')
     except:
         return "You are not registered", 404
 # -------------------------------------------
