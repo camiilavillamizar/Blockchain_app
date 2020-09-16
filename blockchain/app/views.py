@@ -205,7 +205,7 @@ def submit_IP_update():
         new_tx_to_mine = "{}/mine".format(
         Config.connected_node_address(request))
 
-    requests.get(new_tx_to_mine)
+        requests.get(new_tx_to_mine)
 
         return redirect('/update_IP')
     except:
