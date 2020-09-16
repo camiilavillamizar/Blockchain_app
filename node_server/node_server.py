@@ -179,9 +179,14 @@ def create_app():
         # extract the special bits before creating the block
         block_data = request.get_json()
         own = block_data.pop("own")
-        pending_tx = block_data.pop("pending_tx")
+        try:
+            pending_tx = block_data.pop("pending_tx")
+        except KeyError as e:
+            pending_tx = []
+            print("no pending transactions found")
+        proof = block_data.pop("hash")
+
         block = Block.from_json(block_data)
-        proof = block.hash
         added = blockchain.add_block(block, proof)
 
         # si es nuestro propio bloque...

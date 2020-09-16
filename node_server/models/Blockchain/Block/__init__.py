@@ -11,6 +11,10 @@ class Block:
         self.previous_hash = previous_hash
         self.nonce = nonce
 
+    @classmethod
+    def from_json(cls, data: dict):
+        return cls(**data)
+
     def compute_hash(self):
         """
         A function that return the hash of the block contents.

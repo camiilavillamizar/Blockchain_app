@@ -44,7 +44,7 @@ class Blockchain:
         block.hash = proof
         self.chain.append(block)
         for transaction in block.transactions:
-            transaction.save()
+            Transaction.from_json(transaction).save()
         return True
 
     @staticmethod
