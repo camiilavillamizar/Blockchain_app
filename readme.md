@@ -87,3 +87,10 @@ RUNTIME_ENV=LOCAL_ENVIRONMENT
  ./start_tunnel_mac.sh PORT
 ```
 
+## running the test suite
+
+move to the project's root folder and then
+
+```sh
+ python -m unittest
+```
