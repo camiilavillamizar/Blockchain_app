@@ -11,6 +11,7 @@ TITLE = 'YourNet: Decentralized ' 'content sharing'
 
 posts = []
 
+user_registered = False
 
 def fetch_posts():
     """
@@ -68,27 +69,31 @@ def check_login():
 
     for post in posts:
         if user_name == post['user_name']:
-            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
-                if (post['IP'] == actualIP and leave == False):
-                    if update_name != True: 
-                        name = post['content']['name']
-                    print('hola')
-                    return render_template('index.html',
-                                        title=TITLE,
-                                        posts=posts,
-                                        user_name=post['user_name'],
-                                        name=name,
-                                        node_address=Config.connected_node_address(
-                                            request),
-                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-                    break
-                else:
-                    #El usuario si existe pero la Ip no coincide
-                    return render_template('update_ip.html',
-                           title=TITLE,
-                           user_name=user_name,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+            user_registered = True
+            if(user_registered):
+                if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+                    if (post['IP'] == actualIP and leave == False):
+                        if update_name != True: 
+                            name = post['content']['name']
+                        print('hola')
+                        return render_template('index.html',
+                                            title=TITLE,
+                                            posts=posts,
+                                            user_name=post['user_name'],
+                                            name=name,
+                                            node_address=Config.connected_node_address(
+                                                request),
+                                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                        break
+                    else:
+                        #El usuario si existe pero la Ip no coincide
+                        return render_template('update_ip.html',
+                            title=TITLE,
+                            user_name=user_name,
+                            node_address=Config.connected_node_address(request),
+                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+            else:
+                return "User not registered"
 
 
     return redirect('/login')
@@ -205,7 +210,7 @@ def submit_IP_update():
         new_tx_to_mine = "{}/mine".format(
         Config.connected_node_address(request))
 
-    requests.get(new_tx_to_mine)
+        requests.get(new_tx_to_mine)
 
         return redirect('/update_IP')
     except:
