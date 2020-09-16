@@ -51,7 +51,6 @@ def login():
 @app.route('/check_login', methods=['POST'])
 def check_login():
 
-    print('hola')
     user_name = request.form['user_name']
     actualIP = request.remote_addr
     leave = False
@@ -72,7 +71,6 @@ def check_login():
                 if (post['IP'] == actualIP and leave == False):
                     if update_name != True: 
                         name = post['content']['name']
-                    print('hola')
                     return render_template('index.html',
                                         title=TITLE,
                                         posts=posts,
@@ -142,17 +140,29 @@ def submit_textarea_i():
 
 @app.route('/submit-transaction/user/<user_name>', methods=['POST'])
 def submit_textarea_t(user_name):
+    
     """
     Endpoint to create a new transaction via our application.
     """
     post_content = request.form["content"]
+    update_name = False
+    for post in posts:
+       if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+            update_name = True
+            name = post['content']['name']
+    
+    for post in posts: 
+        if post['user_name'] == user_name and post['type'] == 'inscription':
+            if update_name == False:
+                name = post['content']['name']
 
     post_object = {
         'type': 'transaction',
         'user_name': user_name,
         'IP': request.remote_addr,
         'content': {
-            'text': post_content
+            'text': post_content,
+            'name': name
         },
         'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     }
@@ -161,15 +171,17 @@ def submit_textarea_t(user_name):
     new_tx_address = "{}/new_transaction".format(
         Config.connected_node_address(request))
 
-    requests.post(new_tx_address,
-                  json=post_object,
-                  headers={'Content-type': 'application/json'})
-    new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
+    requests.post(new_tx_address, json=post_object, headers={'Content-type': 'application/json'})
+
+    new_tx_to_mine = "{}/mine".format(Config.connected_node_address(request))
 
     requests.get(new_tx_to_mine)
 
-    return redirect('/')
+    fetch_posts()
+    return render_template('index.html', title=TITLE, posts=posts,
+                            user_name= user_name, name=name,
+                             node_address=Config.connected_node_address( request),
+                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 # UPDATE IP
 
