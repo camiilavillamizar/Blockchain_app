@@ -44,7 +44,11 @@ class multiNodeTestCase(unittest.TestCase):
     def test_add_transaction(self):
         """ adds a single transaction to the 8000 node """
         requests.post(loch + nodelist[0] + "/new_transaction",
-                      json={"content": "contenido8000"})
+                      json={"content": {"text": "contenidoDeprueba"},
+                            "type": "transaction",
+                            "user_name": "",
+                            "IP": "127.0.0.1",
+                            "datetime": ""})
 
         self.assertEqual(len(requests.get(
             loch + nodelist[0] + "/pending_tx").json()), 1)
@@ -56,7 +60,11 @@ class multiNodeTestCase(unittest.TestCase):
     def test_add_other_transaction(self):
         """ test to see if fixtures are working well """
         requests.post(loch + nodelist[1] + "/new_transaction",
-                      json={"content": "contenido8000"})
+                      json={"content": {"text": "contenidoDeprueba"},
+                            "type": "transaction",
+                            "user_name": "",
+                            "IP": "127.0.0.1",
+                            "datetime": ""})
 
         self.assertEqual(len(requests.get(
             loch + nodelist[0] + "/pending_tx").json()), 0)
@@ -91,7 +99,11 @@ class multiNodeTestCase(unittest.TestCase):
                       json={"node_address": loch + nodelist[0]})
 
         requests.post(loch + nodelist[0] + "/new_transaction",
-                      json={"content": "contenido8000"})
+                      json={"content": {"text": "contenidoDeprueba"},
+                            "type": "transaction",
+                            "user_name": "",
+                            "IP": "127.0.0.1",
+                            "datetime": ""})
 
         requests.get(loch + nodelist[0] + "/mine")
 
@@ -110,7 +122,11 @@ class multiNodeTestCase(unittest.TestCase):
             # print("agregando la transacción")
             requests.post(
                 args["url"] + "/new_transaction",
-                json={'content': args["content"]}
+                json={"content": {"text": args["content"]},
+                      "type": "transaction",
+                      "user_name": "",
+                      "IP": "127.0.0.1",
+                      "datetime": ""}
             )
             # print("minando la transacción")
             requests.get(args["url"] + "/mine")
