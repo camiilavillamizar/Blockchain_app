@@ -1,6 +1,6 @@
 from hashlib import sha256
 import jsons
-from models.Blockchain.Block.Transaction import Transaction
+from node_server.models.Blockchain.Block.Transaction import Transaction
 
 
 class Block:

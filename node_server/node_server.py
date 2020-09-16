@@ -1,10 +1,11 @@
-from models.Blockchain import Blockchain
-from models.Blockchain.Block import Block
-from models.Blockchain.Block.Transaction import Transaction
+from node_server.models.Blockchain import Blockchain
+from node_server.models.Blockchain.Block import Block
+from node_server.models.Blockchain.Block.Transaction import Transaction
 from flask import Flask, request
 import jsons
 import time
 import requests
+from copy import copy
 
 
 app = Flask(__name__)
@@ -16,14 +17,12 @@ blockchain.create_genesis_block()
 # the address to other participating members of the network
 peers = set()
 
-
 # endpoint to submit a new transaction. This will be used by
 # our application to add new data (posts) to the blockchain
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     blockchain.add_new_transaction(Transaction.from_json(request.get_json()))
     return "Success", 201
-
 
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
@@ -37,24 +36,33 @@ def get_chain():
                        "chain": chain_data,
                        "peers": list(peers)})
 
-
 # endpoint to request the node to mine the unconfirmed
 # transactions (if any). We'll be using it to initiate
 # a command to mine from our application itself.
 @app.route('/mine', methods=['GET'])
 def mine_unconfirmed_transactions():
-    result = blockchain.mine()
-    if not result:
-        return "No transactions to mine"
-    else:
-        # Making sure we have the longest chain before announcing to the network
-        chain_length = len(blockchain.chain)
-        consensus()
-        if chain_length == len(blockchain.chain):
-            # announce the recently mined block to the network
-            announce_new_block(blockchain.last_block)
-        return "Block #{} is mined.".format(blockchain.last_block.index)
+    global blockchain
+    chain_length = len(blockchain.chain)
+    consensus()
+    if chain_length == len(blockchain.chain):
+        pending = copy(blockchain.unconfirmed_transactions)
+        result = blockchain.mine()
+        if result:
+            msg = copy(result[0])
+            msg.hash = result[1]
+            msg.own = True
+            msg.pending_tx = pending
+            requests.post("{}add_block".format(request.host_url),
+                          headers={'Content-Type': "application/json"},
+                          data=jsons.dumps(msg.__dict__, sort_keys=True))
+            return "El bloque se ha enviado para inspección.", 202
+        return "No hay transacciones por minar."
 
+    else:
+        print("actualizando cadena")
+        dump = requests.get('{}chain'.format(next(iter(peers))))
+        blockchain = create_chain_from_dump(dump.json()['chain'])
+        mine_unconfirmed_transactions()
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
@@ -64,12 +72,16 @@ def register_new_peers():
         return "Invalid data", 400
 
     # Add the node to the peer list
-    peers.add(node_address)
+    if node_address not in peers:
+        peers.add(node_address)
+        # enviar una orden de registro a todos los demás nodos
+        for node in peers:
+            requests.post("{}register_node".format(node),
+                          json={'node_address': node_address})
 
     # Return the consensus blockchain to the newly registered node
     # so that he can sync
     return get_chain()
-
 
 @app.route('/register_with', methods=['POST'])
 def register_with_existing_node():
@@ -95,12 +107,17 @@ def register_with_existing_node():
         # update chain and the peers
         chain_dump = response.json()['chain']
         blockchain = create_chain_from_dump(chain_dump)
+
+        # agrega el nodo con el que nos registramos, sus peers, y nos
+        # eliminamos a nosotros mismos
+        peers.update([node_address + "/"])
         peers.update(response.json()['peers'])
+        peers.remove(request.host_url)
+
         return "Registration successful", 200
     else:
         # if something goes wrong, pass it on to the API response
         return response.content, response.status_code
-
 
 def create_chain_from_dump(chain_dump):
     generated_blockchain = Blockchain()
@@ -110,7 +127,7 @@ def create_chain_from_dump(chain_dump):
             continue  # skip genesis block
         block = Block(block_data["index"],
                       block_data["transactions"],
-                      block_data["timestamp"],
+                      block_data["datetime"],
                       block_data["previous_hash"],
                       block_data["nonce"])
         proof = block_data['hash']
@@ -119,27 +136,82 @@ def create_chain_from_dump(chain_dump):
             raise Exception("The chain dump is tampered!!")
     return generated_blockchain
 
+@app.route('/remove_node', methods=['POST'])
+def broadcast_remove_block():
+    """ elimina el nodo dado y le envía la misma orden
+    a todos los nodos enlazados. """
+    global peers
+    peer = request.get_json()["node_address"]
+    print(peer)
+    print(peers)
+    if peer in peers:
+        peers.remove(peer)
+    return "eliminado con éxito."
+
+def shutdown():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug server')
+    func()
+
+@app.route('/leave')
+def leave_network():
+    """ le ordena al nodo abandonar la red, lo que hace anunciándose. """
+    for peer in peers:
+        requests.post('{}remove_node'.format(peer),
+                      json={'node_address': request.host_url})
+    shutdown()
+    return "Me han eliminado con éxito de la red."
 
 # endpoint to add a block mined by someone else to
 # the node's chain. The block is first verified by the node
 # and then added to the chain.
 @app.route('/add_block', methods=['POST'])
 def verify_and_add_block():
-    block = Block.from_json(request.get_json())
+    """ esta función recibe dos tipos de requests: los del mismo
+    nodo, y los de los demás. los del mismo nodo se identifican por
+    el bit 'own' del mensaje. estos reciben un tratamiento especial:
+    si son aceptados por la cadena, se reenvían al resto de la red.
+    si no, se repite la operación de minado, con los pending requests
+    que le hagan falta."""
+    # extract the special bits before creating the block
+    block_data = request.get_json()
+    own = block_data.pop("own")
+    pending_tx = block_data.pop("pending_tx")
+    block = Block.from_json(block_data)
     proof = block.hash
     added = blockchain.add_block(block, proof)
+
+    # si es nuestro propio bloque...
+    if own:
+        # ...y fue añadido, reenviar a los demás.
+        if added:
+            # se eliminan las transacciones que fueron minadas
+            blockchain.unconfirmed_transactions = [
+                x for x in blockchain.unconfirmed_transactions
+                if x not in pending_tx]
+            fwd = copy(block)
+            fwd.hash = proof
+            fwd.own = False
+            announce_new_block(fwd)
+            return "New block has been mined.", 201
+        # ...de lo contrario, volver a minar.
+        else:
+            for tx in pending_tx:
+                blockchain.unconfirmed_transactions.insert(0, tx)
+            requests.get("{}mine".format(request.host_url))
+            return "volviendo a minar, actualice pronto.", 202
 
     if not added:
         return "The block was discarded by the node", 400
 
+    print("bloque externo fue añadido a la cadena.")
     return "Block added to the chain", 201
-
 
 # endpoint to query unconfirmed transactions
 @app.route('/pending_tx')
 def get_pending_tx():
     return jsons.dumps(blockchain.unconfirmed_transactions)
-
 
 def consensus():
     """
@@ -165,7 +237,6 @@ def consensus():
 
     return False
 
-
 def announce_new_block(block):
     """
     A function to announce to the network once a block has been mined.
@@ -181,4 +252,4 @@ def announce_new_block(block):
 
 
 # Uncomment this line if you want to specify the port number in the code
-#app.run(debug=True, port=8000)
+# app.run(debug=True, port=8000)

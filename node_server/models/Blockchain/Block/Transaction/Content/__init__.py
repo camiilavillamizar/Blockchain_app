@@ -1,4 +1,4 @@
-from database.helper import Database
+from node_server.database.helper import Database
 class Content():
 
 
