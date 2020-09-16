@@ -58,11 +58,11 @@ def check_login():
     update_name = False
 
     for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
+        if (post['type'] == 'leave' and post['IP'] == actualIP and post['user_name'] == user_name):
             leave = True
 
     for post in posts:
-        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
             update_name = True
             name = post['content']['name']
 
@@ -146,10 +146,11 @@ def submit_textarea_t(user_name):
     """
     Endpoint to create a new transaction via our application.
     """
+    actualIP = request.remote_addr
     post_content = request.form["content"]
     update_name = False
     for post in posts:
-       if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+       if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
             update_name = True
             name = post['content']['name']
     
