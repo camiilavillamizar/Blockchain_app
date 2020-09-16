@@ -51,6 +51,7 @@ def login():
 @app.route('/check_login', methods=['POST'])
 def check_login():
 
+    fetch_posts()
     user_name = request.form['user_name']
     actualIP = request.remote_addr
     leave = False
@@ -81,9 +82,10 @@ def check_login():
                                         readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
                     break
                 else:
-                    #El usuario si existe pero la Ip no coincide
-                    return render_template('update_ip.html',
-                           title=TITLE,
+                    if leave == False:
+                        #El usuario si existe pero la Ip no coincide
+                        return render_template('update_ip.html',
+                            title=TITLE,
                            user_name=user_name,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
@@ -309,4 +311,4 @@ def submit_leave():
 
     requests.get(new_tx_to_mine)
 
-    return redirect('/leave')
+    return redirect('/login')
