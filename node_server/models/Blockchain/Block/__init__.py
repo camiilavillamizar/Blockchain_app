@@ -1,6 +1,6 @@
 from hashlib import sha256
 import jsons
-from models.Blockchain.Block.Transaction import Transaction
+from node_server.models.Blockchain.Block.Transaction import Transaction
 
 
 class Block:
@@ -10,6 +10,10 @@ class Block:
         self.datetime = datetime
         self.previous_hash = previous_hash
         self.nonce = nonce
+
+    @classmethod
+    def from_json(cls, data: dict):
+        return cls(**data)
 
     def compute_hash(self):
         """

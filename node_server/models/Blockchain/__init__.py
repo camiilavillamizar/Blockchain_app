@@ -1,6 +1,6 @@
 from datetime import datetime
-from models.Blockchain.Block import Block
-from models.Blockchain.Block.Transaction import Transaction
+from node_server.models.Blockchain.Block import Block
+from node_server.models.Blockchain.Block.Transaction import Transaction
 
 
 class Blockchain:
@@ -44,7 +44,7 @@ class Blockchain:
         block.hash = proof
         self.chain.append(block)
         for transaction in block.transactions:
-            transaction.save()
+            Transaction.from_json(transaction).save()
         return True
 
     @staticmethod
@@ -111,8 +111,8 @@ class Blockchain:
                           previous_hash=last_block.hash)
 
         proof = self.proof_of_work(new_block)
-        self.add_block(new_block, proof)
+        # self.add_block(new_block, proof)
 
         self.unconfirmed_transactions = []
 
-        return True
+        return (new_block, proof)

@@ -1,6 +1,6 @@
-from models.Blockchain.Block.Transaction.Content import Content
+from node_server.models.Blockchain.Block.Transaction.Content import Content
 from typing import List
-from database.helper import Database
+from node_server.database.helper import Database
 
 
 class Transaction():
