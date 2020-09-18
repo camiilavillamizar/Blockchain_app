@@ -11,14 +11,27 @@
             <div class="col-md-4 offset-md-4 my-auto">
                 <div class="card mt-2">
                     <div class="card-header">
-                        <form action="/submit-inscription" id="textform" name ="textform" method="POST">
-                            <input type="text" name="name" placeholder="Name" class="form-control" autofocus>
-                            <input type="text" name="user_name" placeholder="Username" class="form-control">
-                            <input type="email" name="email" placeholder="Email" class="form-control">
-                            <input type="password" name="password" id="pwrd" class="form-control" placeholder="Password">
-                            <input type="password" name="repeat_password" id="r_pwrd" class="form-control" placeholder="Repeat password" >
+                        <form action="/inscription" id="textform" name ="textform" role="form" method="POST" novalidate>
+                            {{ form.hidden_tag() }}
+                            <input type="text" name="name" id="name" placeholder="Name" class="form-control" autofocus>
+                            {% for error in form.name.errors %}
+                                <span class="text-danger">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <input type="text" name="user_name" id="user_name" placeholder="Username" class="form-control">
+                            {% for error in form.user_name.errors %}
+                                <span class="text-danger">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <input type="email" name="email" id="email" placeholder="Email" class="form-control">
+                            {% for error in form.email.errors %}
+                                <span class="text-danger">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Password">
+                            <input type="password" name="repeat_password" id="repeat_password" class="form-control" placeholder="Repeat password" >
                             <br>
-                            <input type="submit" value="Sign Up" class="btn btn-block btn-outline-primary">
+                            <input type="submit" value="Sign Up" name="submit" id="submit" class="btn btn-block btn-outline-primary">
                         </form>
                         <br>
                         <p class="text-center"> Already have an account? <a href="/login">Login</a></p>
