@@ -6,6 +6,7 @@ import jsons
 import time
 import requests
 from copy import copy
+from threading import Lock
 
 
 def create_app():
@@ -14,9 +15,13 @@ def create_app():
     # the node's copy of blockchain
     blockchain = Blockchain()
     blockchain.create_genesis_block()
+    # the blockchain's lock
+    bloq_lock = Lock()
 
     # the address to other participating members of the network
     peers = set()
+    # the peer list's lock
+    peer_lock = Lock()
 
     # endpoint to submit a new transaction. This will be used by
     # our application to add new data (posts) to the blockchain
@@ -75,9 +80,14 @@ def create_app():
 
         # Add the node to the peer list
         if node_address not in peers:
-            peers.add(node_address)
+            peer_lock.acquire()
+            try:
+                print("error en register_node")
+                peers.add(node_address)
+            finally:
+                peer_lock.release()
             # enviar una orden de registro a todos los demás nodos
-            for node in peers:
+            for node in [x for x in peers if x is not node_address]:
                 requests.post("{}register_node".format(node),
                               json={'node_address': node_address})
 
@@ -108,13 +118,22 @@ def create_app():
             nonlocal peers
             # update chain and the peers
             chain_dump = response.json()['chain']
-            blockchain = create_chain_from_dump(chain_dump)
+            bloq_lock.acquire()
+            try:
+                blockchain = create_chain_from_dump(chain_dump)
+            finally:
+                bloq_lock.release()
 
             # agrega el nodo con el que nos registramos, sus peers, y nos
             # eliminamos a nosotros mismos
-            peers.update([node_address + "/"])
-            peers.update(response.json()['peers'])
-            peers.remove(request.host_url)
+            peer_lock.acquire()
+            try:
+                print("error en register_with")
+                peers.update([node_address + "/"])
+                peers.update(response.json()['peers'])
+                peers.remove(request.host_url)
+            finally:
+                peer_lock.release()
 
             return "Registration successful", 200
         else:
@@ -181,13 +200,19 @@ def create_app():
         own = block_data.pop("own")
         try:
             pending_tx = block_data.pop("pending_tx")
-        except KeyError as e:
+        except KeyError:
             pending_tx = []
             print("no pending transactions found")
         proof = block_data.pop("hash")
 
         block = Block.from_json(block_data)
-        added = blockchain.add_block(block, proof)
+
+        # pedimos acceso a la cadena y esperamos a que la liberen
+        bloq_lock.acquire()
+        try:
+            added = blockchain.add_block(block, proof)
+        finally:
+            bloq_lock.release()
 
         # si es nuestro propio bloque...
         if own:
