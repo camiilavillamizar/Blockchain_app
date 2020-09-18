@@ -13,11 +13,16 @@
                 <div class="col-md-4 offset-md-4 my-auto">
                     <div class="card mt-2">
                         <div class="card-header">
-                            <form action="/check_login" id="textform" name ="textform" method="post">
-                                <input type="text" name="user_name" placeholder="Username" class="form-control">
+                            <form action="/login" id="textform" name ="textform" method="POST">
+                                {{ form.hidden_tag() }}
+                                <input type="text" name="user_name" id="user_name" placeholder="Username" class="form-control">
+                                {% for error in form.user_name.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+
                                 <input type="password" name="password" id="pwrd" class="form-control" placeholder="Password" >
                                 <br>
-                                <input type="submit" value="Post" class="btn btn-block btn-outline-primary">
+                                <input type="submit" value="Login" class="btn btn-block btn-outline-primary">
                                 <br>        
                             </form>
 
