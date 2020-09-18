@@ -5,12 +5,14 @@ import requests
 from flask import render_template, redirect, request
 
 from app import app
+from app.forms import InscriptionForm, LoginForm, UpdateNameForm
 import Config
 
 TITLE = 'YourNet: Decentralized ' 'content sharing'
 
 posts = []
 
+session_up = False
 
 def fetch_posts():
     """
@@ -34,110 +36,117 @@ def fetch_posts():
                        reverse=True)
 
 
-@app.route('/index')
 @app.route('/')
 def index():
     fetch_posts()
     return redirect('/login')
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        fetch_posts()
+        user_name = request.form['user_name']
+        actualIP = request.remote_addr
+        leave = False
+        update_name = False
+
+        for post in posts:
+            if (post['type'] == 'leave' and post['IP'] == actualIP and post['user_name'] == user_name):
+                leave = True
+
+        for post in posts:
+            if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
+                update_name = True
+                name = post['content']['name']
+
+        for post in posts:
+            if user_name == post['user_name']:
+                if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+                    if (post['IP'] == actualIP and leave == False):
+                        session_up = True
+                        if update_name != True: 
+                            name = post['content']['name']
+                        return render_template('index.html',
+                                            title=TITLE,
+                                            posts=posts,
+                                            user_name=post['user_name'],
+                                            name=name,
+                                            node_address=Config.connected_node_address(
+                                                request),
+                                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                        break
+                    else:
+                        if leave == False:
+                            #El usuario si existe pero la Ip no coincide
+                            return render_template('update_ip.html',
+                                title=TITLE,
+                            user_name=user_name,
+                            node_address=Config.connected_node_address(request),
+                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
+        return redirect('/')
+
     return render_template('login.html',
+                           form=form,
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
-
-@app.route('/check_login', methods=['POST'])
-def check_login():
-
-    fetch_posts()
-    user_name = request.form['user_name']
-    actualIP = request.remote_addr
-    leave = False
-    update_name = False
-
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP):
-            leave = True
-
-    for post in posts:
-        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
-            update_name = True
-            name = post['content']['name']
-
-    for post in posts:
-        if user_name == post['user_name']:
-            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
-                if (post['IP'] == actualIP and leave == False):
-                    if update_name != True: 
-                        name = post['content']['name']
-                    return render_template('index.html',
-                                        title=TITLE,
-                                        posts=posts,
-                                        user_name=post['user_name'],
-                                        name=name,
-                                        node_address=Config.connected_node_address(
-                                            request),
-                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-                    break
-                else:
-                    if leave == False:
-                        #El usuario si existe pero la Ip no coincide
-                        return render_template('update_ip.html',
-                            title=TITLE,
-                           user_name=user_name,
-                           node_address=Config.connected_node_address(request),
-                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-
-
-    return redirect('/login')
-
-@app.route('/inscription')
+@app.route('/inscription', methods=['GET', 'POST'])
 def inscription():
     fetch_posts()
+    form = InscriptionForm()
+
+    if form.validate_on_submit():
+        fetch_posts()
+        user_name = request.form['user_name']
+        name = request.form['name']
+        email = request.form['email']
+        not_allowed = False
+
+        for post in posts:
+            if (post['user_name'] == user_name):
+                return "Este usuario ya se encuentra registrado", 404
+
+        post_object = {
+            'type': "inscription",
+            'user_name': user_name,
+            'IP': request.remote_addr,
+            'content': {
+                'text': '{0} se ha inscrito.'.format(user_name),
+                'name': name,
+                'email': email
+            },
+            'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        }
+
+        new_tx_address = "{}/new_transaction".format(
+            Config.connected_node_address(request))
+        requests.post(new_tx_address,
+                    json=post_object,
+                    headers={'Content-type': 'application/json'})
+        
+        new_tx_to_mine = "{}/mine".format(
+            Config.connected_node_address(request))
+
+        requests.get(new_tx_to_mine)
+
+        return redirect('/login')
+
     return render_template('inscription.html',
+                           form=form,
                            title=TITLE,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
-@app.route('/submit-inscription', methods=['POST'])
-def submit_textarea_i():
-
+@app.route('/index/<user_name>/<name>', methods=['GET'])
+def get_index(user_name, name):
     fetch_posts()
-    user_name = request.form['user_name']
-    name = request.form['name']
-    email = request.form['email']
-    not_allowed = False
-
-    for post in posts:
-        if (post['user_name'] == user_name):
-            return "Este usuario ya se encuentra registrado", 404
-
-    post_object = {
-        'type': "inscription",
-        'user_name': user_name,
-        'IP': request.remote_addr,
-        'content': {
-            'text': '{0} se ha inscrito.'.format(user_name),
-            'name': name,
-            'email': email
-        },
-        'datetime': datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    }
-
-    new_tx_address = "{}/new_transaction".format(
-        Config.connected_node_address(request))
-    requests.post(new_tx_address,
-                  json=post_object,
-                  headers={'Content-type': 'application/json'})
-    
-    new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
-
-    requests.get(new_tx_to_mine)
-
-    return redirect('/')
+    return render_template('index.html', title=TITLE, posts=posts,
+                        user_name= user_name, name=name,
+                        node_address=Config.connected_node_address( request),
+                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))   
 
 
 @app.route('/submit-transaction/user/<user_name>', methods=['POST'])
@@ -146,10 +155,11 @@ def submit_textarea_t(user_name):
     """
     Endpoint to create a new transaction via our application.
     """
+    actualIP = request.remote_addr
     post_content = request.form["content"]
     update_name = False
     for post in posts:
-       if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None):
+       if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
             update_name = True
             name = post['content']['name']
     
@@ -182,8 +192,8 @@ def submit_textarea_t(user_name):
     fetch_posts()
     return render_template('index.html', title=TITLE, posts=posts,
                             user_name= user_name, name=name,
-                             node_address=Config.connected_node_address( request),
-                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                            node_address=Config.connected_node_address( request),
+                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))   
 
 # UPDATE IP
 
@@ -221,12 +231,55 @@ def submit_IP_update():
 
         requests.get(new_tx_to_mine)
 
-        return redirect('/login')
+        return redirect('/update_IP')
     except:
         return "You are not registered", 404
 # -------------------------------------------
 # UPDATE NAME
 
+@app.route('/<user_name>')
+def user(user_name):
+    form = UpdateNameForm()
+    fetch_posts()
+    actualIP = request.remote_addr
+    leave = False
+    update_name = False
+
+    for post in posts:
+        if (post['type'] == 'leave' and post['IP'] == actualIP and post['user_name'] == user_name):
+            leave = True
+
+    for post in posts:
+        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
+            update_name = True
+            name = post['content']['name']
+
+    for post in posts:
+        if user_name == post['user_name']:
+            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
+                if (post['IP'] == actualIP and leave == False):
+                    session_up = True
+                    if update_name != True: 
+                        name = post['content']['name']
+                    return render_template('user.html',
+                                        form=form,
+                                        title=TITLE,
+                                        posts=posts,
+                                        user_name=post['user_name'],
+                                        name=name,
+                                        node_address=Config.connected_node_address(
+                                            request),
+                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                    break
+                else:
+                    if leave == False:
+                        #El usuario si existe pero la Ip no coincide
+                        return render_template('update_ip.html',
+                            title=TITLE,
+                        user_name=user_name,
+                        node_address=Config.connected_node_address(request),
+                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+                        
 
 @app.route('/update_name')
 def update_name():
