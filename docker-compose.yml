@@ -15,6 +15,8 @@ services:
           - NGROK_DEBUG=1
         networks: 
             - blockchain_network
+        depends_on: 
+            - reverseproxy_service
 
     reverseproxy_service:
         build: ./nginx
@@ -22,6 +24,9 @@ services:
         restart: always
         networks: 
             - blockchain_network
+        depends_on: 
+            - blockchain_node_server
+            - blockchain
 
 
     blockchain_node_server:
@@ -29,10 +34,13 @@ services:
         build: ./node_server
         volumes: 
             - ./node_server:/node_server
+        environment: 
+            - SQLALCHEMY_DATABASE_URI=mysql+pymysql://blockchain_user:password@mysql_database:3306/blockchain
         networks: 
             - blockchain_network
         depends_on: 
-            - reverseproxy_service
+            - mysql_database
+        
 
     blockchain:
         container_name: 'blockchain_service'
@@ -47,7 +55,36 @@ services:
             - blockchain_network
         depends_on: 
             - blockchain_node_server
-            - reverseproxy_service
+
+    mysql_database:
+        container_name: mysql_database
+        image: mysql
+        restart: always
+        command: --default-authentication-plugin=mysql_native_password
+        networks:
+          - blockchain_network
+        environment:
+          MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+          MYSQL_DATABASE: blockchain
+          MYSQL_USER: blockchain_user
+          MYSQL_PASSWORD: password
+    
+
+    mysql-admin:
+        restart: always
+        image: phpmyadmin/phpmyadmin
+        container_name: mysql-admin
+        ports:
+            - "8001:80"
+        networks:
+            - blockchain_network
+        depends_on:
+            - mysql_database
+        environment:
+            PMA_HOST: mysql_database
+            PMA_PORT: 3306
+            PMA_USER: blockchain_user
+            PMA_PASSWORD: password
 
 networks: 
     blockchain_network:
