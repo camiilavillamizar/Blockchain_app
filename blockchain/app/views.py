@@ -109,6 +109,16 @@ def inscription():
             if (post['user_name'] == user_name):
                 return "Este usuario ya se encuentra registrado", 404
 
+    for post in posts:
+        if (post['type'] == 'leave' and post['IP'] == actualIP and post['user_name'] == user_name):
+            leave = True
+
+    for post in posts:
+        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
+            update_name = True
+            name = post['content']['name']
+
+
         post_object = {
             'type': "inscription",
             'user_name': user_name,
