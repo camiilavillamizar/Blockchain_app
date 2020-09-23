@@ -82,7 +82,7 @@ def register_with_existing_node():
     if not node_address:
         return "Invalid data", 400
 
-    data = {"node_address": request.host_url}
+    data = {"node_address": request.url_root}
     headers = {'Content-Type': "application/json"}
 
     # Make a request to register with remote node and obtain information
