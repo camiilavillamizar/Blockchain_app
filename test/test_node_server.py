@@ -119,7 +119,6 @@ class multiNodeTestCase(unittest.TestCase):
                       json={"node_address": loch + nodelist[0]})
 
         def commentNmine(args):
-            # print("agregando la transacción")
             requests.post(
                 args["url"] + "/new_transaction",
                 json={"content": {"text": args["content"]},
@@ -128,7 +127,6 @@ class multiNodeTestCase(unittest.TestCase):
                       "IP": "127.0.0.1",
                       "datetime": ""}
             )
-            # print("minando la transacción")
             requests.get(args["url"] + "/mine")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
