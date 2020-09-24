@@ -263,5 +263,5 @@ def announce_new_block(block):
         url = "{}add_block".format(peer)
         headers = {'Content-Type': "application/json"}
         requests.post(url,
-                      data=jsons.dumps(block.__dict__, sort_keys=True),
+                      data=jsons.dumps(block.serialize, sort_keys=True),
                       headers=headers)

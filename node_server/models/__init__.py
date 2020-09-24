@@ -5,6 +5,37 @@ import jsons
 from node_server import db
 
 
+class User(db.Model):
+    user_name: str
+    name: str
+    password : str
+    ip: str
+    email: str
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_name = db.Column(db.String(180), index=False, unique=False, nullable=True)
+    name = db.Column(db.String(180), index=False, unique=False, nullable=True)
+    password = db.Column(db.String(180), index=False, unique=False, nullable=True)
+    ip = db.Column(db.String(180), index=False, unique=False, nullable=False)
+    email = db.Column(db.String(180), index=False, unique=False, nullable=True)
+
+    def __init__(self, email, name, password, ip, user_name):
+        self.email = email
+        self.password = self.encrypt_password(password)
+        self.ip = ip
+        self.user_name = user_name
+
+    def encrypt_password(self, password):
+        return password
+
+    def serialize(self):
+        return {
+            'user_name': self.user_name,
+            'name': self.name,
+            'ip': self.ip,
+            'email': self.email
+        }
+
 class Content(db.Model):
     id: int
     name: str
@@ -23,6 +54,7 @@ class Content(db.Model):
     previous_ip = db.Column(db.String(180), index=False,
                             unique=False, nullable=True)
     transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
+    transaction = db.relationship("Transaction", back_populates="content", uselist=False) 
 
     def __init__(self, text: str = None, name: str = None, email: str = None, previous_name: str = None, previous_ip: str = None):
         self.name = name
@@ -55,7 +87,7 @@ class Transaction(db.Model):
                           unique=False, nullable=False)
     ip = db.Column(db.String(180), index=False, unique=False, nullable=False)
     datetime = db.Column(db.String(180), nullable=False)
-    
+    content = db.relationship("Content", back_populates="transaction", uselist=False) 
 
     def __init__(self, type: str = None, content: Content = {}, user_name: str = None, IP: str = None, datetime: str = None):
         self.content = Content(**content)
