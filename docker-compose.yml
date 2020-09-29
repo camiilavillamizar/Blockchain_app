@@ -49,6 +49,7 @@ services:
             - flask_port=5000
             - CONNECTED_NODE_ADDRESS=http://reverseproxy_service/node
             - RUNTIME_ENV=DOCKER_ENVIRONMENT
+            - SQLALCHEMY_DATABASE_URI=mysql+pymysql://blockchain_user:password@mysql_database:3306/blockchain
         volumes: 
             - ./blockchain:/blockchain
         networks: 
