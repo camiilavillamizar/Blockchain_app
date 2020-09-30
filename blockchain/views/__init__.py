@@ -4,8 +4,8 @@ import json
 import requests
 from flask import render_template, redirect, request
 
-from app import app
-import Config
+from flask import current_app as app
+from blockchain.Config import connected_node_address
 
 TITLE = 'YourNet: Decentralized ' 'content sharing'
 
@@ -18,7 +18,7 @@ def fetch_posts():
     data and store it locally.
     """
     get_chain_address = "{}/chain".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
     response = requests.get(get_chain_address)
     if response.status_code == 200:
         content = []
@@ -44,7 +44,7 @@ def index():
 def login():
     return render_template('login.html',
                            title=TITLE,
-                           node_address=Config.connected_node_address(request),
+                           node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -77,7 +77,7 @@ def check_login():
                                         posts=posts,
                                         user_name=post['user_name'],
                                         name=name,
-                                        node_address=Config.connected_node_address(
+                                        node_address=connected_node_address(
                                             request),
                                         readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
                     break
@@ -87,7 +87,7 @@ def check_login():
                         return render_template('update_ip.html',
                             title=TITLE,
                            user_name=user_name,
-                           node_address=Config.connected_node_address(request),
+                           node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -98,7 +98,7 @@ def inscription():
     fetch_posts()
     return render_template('inscription.html',
                            title=TITLE,
-                           node_address=Config.connected_node_address(request),
+                           node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 @app.route('/submit-inscription', methods=['POST'])
@@ -127,13 +127,13 @@ def submit_textarea_i():
     }
 
     new_tx_address = "{}/new_transaction".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
     
     new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
 
     requests.get(new_tx_to_mine)
 
@@ -172,18 +172,18 @@ def submit_textarea_t(user_name):
 
     # Submit a transaction
     new_tx_address = "{}/new_transaction".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
 
     requests.post(new_tx_address, json=post_object, headers={'Content-type': 'application/json'})
 
-    new_tx_to_mine = "{}/mine".format(Config.connected_node_address(request))
+    new_tx_to_mine = "{}/mine".format(connected_node_address(request))
 
     requests.get(new_tx_to_mine)
 
     fetch_posts()
     return render_template('index.html', title=TITLE, posts=posts,
                             user_name= user_name, name=name,
-                             node_address=Config.connected_node_address( request),
+                             node_address=connected_node_address( request),
                             readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 # UPDATE IP
@@ -213,12 +213,12 @@ def submit_IP_update():
         Se debe de agregar el nodo con ip 'IP' y eliminar el nodo previous_ip.
         """
         new_tx_address = "{}/new_transaction".format(
-            Config.connected_node_address(request))
+            connected_node_address(request))
         requests.post(new_tx_address,
                       json=post_object,
                       headers={'Content-type': 'application/json'})
         new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
 
         requests.get(new_tx_to_mine)
 
@@ -233,7 +233,7 @@ def submit_IP_update():
 def update_name():
     return render_template('update_name.html',
                            title=TITLE,
-                           node_address=Config.connected_node_address(request),
+                           node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -259,13 +259,13 @@ def submit_name_update():
     }
     #ACTUALIZAR EN LA DB QUE SE CAMBIÓ EL NOMBRE 
     new_tx_address = "{}/new_transaction".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
 
     new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
 
     requests.get(new_tx_to_mine)
 
@@ -280,7 +280,7 @@ def leave():
     return render_template('leave.html',
                            title='YourNet: Decentralized '
                                  'content sharing',
-                           node_address=Config.connected_node_address(request),
+                           node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 
@@ -303,12 +303,12 @@ def submit_leave():
     }
 
     new_tx_address = "{}/new_transaction".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
     requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
     new_tx_to_mine = "{}/mine".format(
-        Config.connected_node_address(request))
+        connected_node_address(request))
 
     requests.get(new_tx_to_mine)
 

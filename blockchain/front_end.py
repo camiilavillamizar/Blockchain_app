@@ -1,13 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from app import views
+import os
 
-app = Flask(__name__)
-
-db = SQLAlchemy(app)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
-
+db = SQLAlchemy()
 class User(db.Model):
     user_name: str
     name: str
@@ -18,7 +13,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(180), index=False, unique=False, nullable=True)
     name = db.Column(db.String(180), index=False, unique=False, nullable=True)
-    password = db.Column(db.ARRAY(db.String(180), index=False, unique=False, nullable=True)
+    password = db.Column(db.PickleType, index=False, unique=False, nullable=True)
     ip = db.Column(db.String(180), index=False, unique=False, nullable=False)
     email = db.Column(db.String(180), index=False, unique=False, nullable=True)
 
@@ -39,5 +34,13 @@ class User(db.Model):
             'email': self.email
         }
 
-db.init_app(app)
-db.create_all()
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+    db.init_app(app)
+    
+    with app.app_context():
+        import blockchain.views
+        db.create_all()
+        return app
