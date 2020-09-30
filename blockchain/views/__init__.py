@@ -7,6 +7,12 @@ from flask import render_template, redirect, request
 from flask import current_app as app
 from blockchain.Config import connected_node_address
 
+from zxcvbn import zxcvbn
+from  zxcvbn.matching  import  add_frequency_lists 
+import hashlib
+import random
+import string
+
 from ..front_end import User
 from ..front_end import db
 
@@ -99,8 +105,10 @@ def check_login():
 @app.route('/inscription')
 def inscription():
     fetch_posts()
+    message = ' '
     return render_template('inscription.html',
                            title=TITLE,
+                           message = message,
                            node_address=connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
@@ -108,10 +116,30 @@ def inscription():
 def submit_textarea_i():
 
     fetch_posts()
-    user_name = request.form['user_name']
-    name = request.form['name']
-    email = request.form['email']
+    
     password = request.form['password']
+    name = request.form['name']
+    user_name = request.form['user_name']
+    email = request.form['email']
+    
+    results = zxcvbn(password, user_inputs=[name])
+
+    if results['score'] < 3:
+        message = 'Insecure password. '
+
+        if (results['feedback']['warning'] != ''):
+            message += results['feedback']['warning']
+
+        suggestions = results['feedback']['suggestions']
+        if ( suggestions != '' and len(suggestions) >= 1):
+            for i in suggestions:
+                message += ' ' + i
+        return render_template('inscription.html',
+                           title=TITLE,
+                           message = message,
+                           node_address=connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
     not_allowed = False
 
     user = User(user_name=user_name, name=name, password=password, ip=request.remote_addr, email=email)
