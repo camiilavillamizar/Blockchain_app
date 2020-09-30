@@ -7,6 +7,9 @@ from flask import render_template, redirect, request
 from flask import current_app as app
 from blockchain.Config import connected_node_address
 
+from ..front_end import User
+from ..front_end import db
+
 TITLE = 'YourNet: Decentralized ' 'content sharing'
 
 posts = []
@@ -108,7 +111,12 @@ def submit_textarea_i():
     user_name = request.form['user_name']
     name = request.form['name']
     email = request.form['email']
+    password = request.form['password']
     not_allowed = False
+
+    user = User(user_name=user_name, name=name, password=password, ip=request.remote_addr, email=email)
+    db.session.add(user)
+    db.session.commit()
 
     for post in posts:
         if (post['user_name'] == user_name):
