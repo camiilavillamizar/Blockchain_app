@@ -1,10 +1,13 @@
 from node_server.models import Blockchain, Transaction, Block, Content
+from node_server.functions import saving_password
 from flask import request, jsonify
 from flask import current_app as app
 import jsons
 import time
 import requests
 from copy import copy
+
+
 
 # the node's copy of blockchain
 blockchain = Blockchain()
@@ -16,10 +19,18 @@ peers = set()
 # endpoint to submit a new transaction. This will be used by
 # our application to add new data (posts) to the blockchain
 
-
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
-    blockchain.add_new_transaction(Transaction.from_json(request.get_json()))
+    tx_data = request.get_json()
+
+    if tx_data['type'] == 'inscription':
+        message = saving_password(tx_data) 
+        tx_data.pop('password')
+
+        if (message != True):
+            return message
+
+    blockchain.add_new_transaction(Transaction.from_json(tx_data))
     return "Success", 201
 
 # endpoint to return the node's copy of the chain.

@@ -96,8 +96,10 @@ def check_login():
 @app.route('/inscription')
 def inscription():
     fetch_posts()
+    message = ''
     return render_template('inscription.html',
                            title=TITLE,
+                           message = message,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
@@ -108,6 +110,7 @@ def submit_textarea_i():
     user_name = request.form['user_name']
     name = request.form['name']
     email = request.form['email']
+    password = request.form['password']
     not_allowed = False
 
     for post in posts:
@@ -118,6 +121,7 @@ def submit_textarea_i():
         'type': "inscription",
         'user_name': user_name,
         'IP': request.remote_addr,
+        'password': password,
         'content': {
             'text': '{0} se ha inscrito.'.format(user_name),
             'name': name,
@@ -128,10 +132,16 @@ def submit_textarea_i():
 
     new_tx_address = "{}/new_transaction".format(
         Config.connected_node_address(request))
-    requests.post(new_tx_address,
+    message = requests.post(new_tx_address,
                   json=post_object,
                   headers={'Content-type': 'application/json'})
     
+    if message != 201: 
+        return render_template('inscription.html',
+                           title=TITLE,
+                           message = message.text,
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
     new_tx_to_mine = "{}/mine".format(
         Config.connected_node_address(request))
 

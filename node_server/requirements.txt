@@ -3,3 +3,4 @@ requests~=2.22
 jsons==1.2.0
 Flask-SQLAlchemy==2.4.4
 PyMySQL==0.10.1
+zxcvbn-python==4.4.24

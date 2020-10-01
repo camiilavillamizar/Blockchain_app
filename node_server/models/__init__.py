@@ -8,25 +8,28 @@ from node_server import db
 class User(db.Model):
     user_name: str
     name: str
+    salt: str
     password : str
     ip: str
     email: str
+    
 
     id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(180), index=False, unique=False, nullable=True)
-    name = db.Column(db.String(180), index=False, unique=False, nullable=True)
-    password = db.Column(db.String(180), index=False, unique=False, nullable=True)
+    user_name = db.Column(db.String(180), index=False, unique=False, nullable=False)
+    name = db.Column(db.String(180), index=False, unique=False, nullable=False)
+    password = db.Column(db.String(180), index=False, unique=False, nullable=False)
+    salt = db.Column(db.String(3), index=False, unique=False, nullable=False)
     ip = db.Column(db.String(180), index=False, unique=False, nullable=False)
-    email = db.Column(db.String(180), index=False, unique=False, nullable=True)
+    email = db.Column(db.String(180), index=False, unique=False, nullable=False)
 
-    def __init__(self, email, name, password, ip, user_name):
+    def __init__(self, email, name, password, salt, ip, user_name):
         self.email = email
-        self.password = self.encrypt_password(password)
+        self.password = password
         self.ip = ip
         self.user_name = user_name
+        self.salt = salt
+        self.name = name
 
-    def encrypt_password(self, password):
-        return password
 
     def serialize(self):
         return {
