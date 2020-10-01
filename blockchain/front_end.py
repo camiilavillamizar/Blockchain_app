@@ -14,15 +14,17 @@ class User(db.Model):
     user_name = db.Column(db.String(180), index=False, unique=False, nullable=False)
     name = db.Column(db.String(180), index=False, unique=False, nullable=False)
     password = db.Column(db.String(180), index=False, unique=False, nullable=False)
+    salt = db.Column(db.String(3), index=False, unique=False, nullable=False)
     ip = db.Column(db.String(180), index=False, unique=False, nullable=False)
     email = db.Column(db.String(180), index=False, unique=False, nullable=False)
 
-    def __init__(self, email, name, password, ip, user_name):
+    def __init__(self, email, name, password, salt, ip, user_name):
         self.email = email
         self.password = password
         self.ip = ip
         self.user_name = user_name
         self.name = name
+        self.salt = salt
 
     def serialize(self):
         return {
@@ -30,7 +32,6 @@ class User(db.Model):
             'name': self.name,
             'ip': self.ip,
             'email': self.email,
-            'password': self.password
         }
 
 def create_app():

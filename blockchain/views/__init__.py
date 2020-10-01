@@ -62,6 +62,21 @@ def check_login():
 
     fetch_posts()
     user_name = request.form['user_name']
+    password = request.form['password']
+
+    user = User.query.filter_by(user_name=user_name).first()
+    password += user.salt
+
+    hash_object = hashlib.sha256(str(password).encode('utf-8')).hexdigest()
+
+    if (hash_object != user.password):
+        message = 'Incorrect password'
+        return render_template('login.html',
+                           message = message, 
+                           title=TITLE,
+                           node_address=connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
     actualIP = request.remote_addr
     leave = False
     update_name = False
@@ -142,7 +157,14 @@ def submit_textarea_i():
 
     not_allowed = False
 
-    user = User(user_name=user_name, name=name, password=password, ip=request.remote_addr, email=email)
+    salt = ''
+    for i in range (3):
+        salt += random.choice(string.ascii_lowercase)
+
+    password += salt
+    hash_password = hashlib.sha256(str(password).encode('utf-8')).hexdigest()
+
+    user = User(user_name=user_name, name=name, password=hash_password, salt=salt, ip=request.remote_addr, email=email)
     db.session.add(user)
     db.session.commit()
 
