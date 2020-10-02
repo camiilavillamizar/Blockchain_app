@@ -42,8 +42,10 @@ def index():
 
 @app.route('/login')
 def login():
+    message = ''
     return render_template('login.html',
                            title=TITLE,
+                           message = message,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
@@ -54,44 +56,48 @@ def check_login():
     fetch_posts()
     user_name = request.form['user_name']
     actualIP = request.remote_addr
+    password = request.form['password']
     leave = False
     update_name = False
 
-    for post in posts:
-        if (post['type'] == 'leave' and post['IP'] == actualIP and post['user_name'] == user_name):
-            leave = True
+    post_object = {
+        'user_name': user_name,
+        'password' : password,
+        'IP': actualIP
+    }
 
-    for post in posts:
-        if (post['type'] == 'update' and post['IP'] == actualIP and post['content']['previous_name'] is not None and post['user_name'] == user_name):
-            update_name = True
-            name = post['content']['name']
+    new_tx_address = "{}/check_login".format(
+        Config.connected_node_address(request))
 
-    for post in posts:
-        if user_name == post['user_name']:
-            if (post['type'] == 'inscription' or (post['type'] == 'update' and 'previous_ip' in post['content'].keys())):
-                if (post['IP'] == actualIP and leave == False):
-                    if update_name != True: 
-                        name = post['content']['name']
-                    return render_template('index.html',
-                                        title=TITLE,
-                                        posts=posts,
-                                        user_name=post['user_name'],
-                                        name=name,
-                                        node_address=Config.connected_node_address(
-                                            request),
-                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-                    break
-                else:
-                    if leave == False:
-                        #El usuario si existe pero la Ip no coincide
-                        return render_template('update_ip.html',
-                            title=TITLE,
-                           user_name=user_name,
+    message = requests.post(new_tx_address,
+                  json=post_object,
+                  headers={'Content-type': 'application/json'})
+
+    res = json.loads(message.text)
+
+    if res['error'] == "Incorrect password" or res['error'] == "Unregistered user":
+        return render_template('login.html',
+                           title=TITLE,
+                           message = res['error'],
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
-
-    return redirect('/login')
+    if res['error'] == "Different IP":
+        return render_template('update_ip.html',
+                            title=TITLE,
+                           user_name=res['user_name'],
+                           node_address=Config.connected_node_address(request),
+                           readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+    
+    if res['error'] == None: 
+        return render_template('index.html',
+                                        title=TITLE,
+                                        posts=posts,
+                                        user_name=res['user_name'],
+                                        name=res['name'],
+                                        node_address=Config.connected_node_address(
+                                            request),
+                                        readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 
 @app.route('/inscription')
 def inscription():
@@ -136,12 +142,13 @@ def submit_textarea_i():
                   json=post_object,
                   headers={'Content-type': 'application/json'})
     
-    if message != 201: 
+    if message.text != "Success": 
         return render_template('inscription.html',
                            title=TITLE,
                            message = message.text,
                            node_address=Config.connected_node_address(request),
                            readable_time=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+
     new_tx_to_mine = "{}/mine".format(
         Config.connected_node_address(request))
 

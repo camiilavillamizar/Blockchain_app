@@ -1,5 +1,5 @@
 from node_server.models import Blockchain, Transaction, Block, Content
-from node_server.functions import saving_password
+from node_server.functions import saving_password, authentication
 from flask import request, jsonify
 from flask import current_app as app
 import jsons
@@ -18,6 +18,15 @@ peers = set()
 
 # endpoint to submit a new transaction. This will be used by
 # our application to add new data (posts) to the blockchain
+
+@app.route('/check_login', methods=['POST'])
+def check_login():
+    tx_data = request.get_json()
+    message = authentication(tx_data)
+
+    return message
+
+
 
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
